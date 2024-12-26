@@ -1,0 +1,63 @@
+From: bent at clark.net (Ben Taylor)
+Date: Wed, 1 Mar 2000 15:58:53 -0500 (EST)
+Subject: Post-compile RSA error with 1.2.2, Solaris 7, OpenSSL 0.9.5
+In-Reply-To: <Pine.GSO.4.05.10003011455290.7189-100000@shell.clark.net>
+Message-ID: <Pine.GSO.4.05.10003011556320.12161-100000@shell.clark.net>
+Content-Length: 1812
+Lines: 55
+
+On Wed, 1 Mar 2000, Rip Loomis wrote:
+
+> It looks as though even though the autoconf notes
+> that it found OpenSSL, there's a problem with my
+> library paths such that libssl can't be found.
+> I'm not sure yet, but I'm guessing that the problem
+> is at runtime rather than compile time.
+
+Generally when I configure openssh on solaris, I have to add
+env LDFLAGS="-R/usr/local/lib -L/usr/local/lib -L/usr/local/lib/ssl" ./configure
+to get it to build without intervention.  I haven't had a whole lot
+of time recently to work on this, but it sounds like this might be your
+problem.
+
+Ben
+
+> 
+> If anyone has other suggestions, feel free to send them
+> directly to me, and I'll summarize to the list
+> when I sort things out.  Thanks--
+> 
+>     --Rip
+> 
+> On Wed, 1 Mar 2000, Ben Taylor wrote:
+> 
+> > On Wed, 1 Mar 2000, Rip Loomis wrote:
+> > 
+> > > If I try to ssh to a host that is running SSH, or I try to start the local
+> > > sshd, I get (with the appropriate program name in place of $0):
+> > > $0: no RSA support in libssl and libcrypto -- exiting.  See ssl(8)
+> > > 
+> > > I've looked through the archives and glanced at the source, but nothing
+> > > jumps out as the obvious cause.  Other folks seem to have OpenSSH up
+> > > on Solaris 7 already--so does anyone have any hints as I start trying to
+> > > RTFM and RTFS?
+> > > 
+> > > Note:  After my first attempt blew up, I also tried (as an alternate
+> > > method) downloading, compiling, installing, and linking against RSAREF2.
+> > > That apparently worked okay, but the end result was the same.  Any chance
+> > > that SSH found the correct libraries at compile time, but can't find them
+> > > at runtime?
+> > 
+> > Rebuild openssl.  It has links into the rsaref2 code.  Other than
+> > that, it sounds like my setup.
+> > 
+> > Ben
+> > 
+> > 
+> > 
+> > 
+> 
+
+
+
+

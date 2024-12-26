@@ -1,0 +1,36 @@
+From: djm at mindrot.org (Damien Miller)
+Date: Thu, 2 Mar 2000 21:09:38 +1100 (EST)
+Subject: Is it securely: `hostname`:10 ?
+In-Reply-To: <20000302113458.A8018@yarene.elektra.ru>
+Message-ID: <Pine.LNX.4.10.10003022107190.652-100000@mothra.mindrot.org>
+Content-Length: 700
+Lines: 28
+
+On Thu, 2 Mar 2000, ????? ?????? ?????????? wrote:
+
+> Hello,
+> I am using OpenSSH 1.2.1 on Solaris 2.6.
+> I am using X forwarding intensively. During work OpenSSH creates
+> display like `hostname`:10. Is it securely?? Why not 127.0.0.1:10 or 
+> localhost:10 ?
+
+Where "hostname" is the machine you logged in _to_.
+
+If the target does not know its own hostname then things are very 
+broken.
+
+IIRC some broken Unices (references?) autodetect localhost:xx
+$DISPLAYs and starting using shared memory to communicate.
+
+-d
+
+--
+| "Bombay is 250ms from New York in the new world order" - Alan Cox
+| Damien Miller - http://www.mindrot.org/
+| Email: djm at mindrot.org (home) -or- djm at ibs.com.au (work)
+
+
+
+
+
+

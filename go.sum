@@ -1,0 +1,6 @@
+github.com/amalfra/maildir v1.0.0 h1:2bKwjYsr/sMDZmlkUg7gLeiL3mNQ3uCiOl1PeiygXgc=
+github.com/amalfra/maildir v1.0.0/go.mod h1:/Ej8VVhVRQJJ1v78MWKIz5IJAUf5AqYur9DzpL1vF1c=
+github.com/emersion/go-maildir v0.6.0 h1:MPx2RSS1Xq8j1cNOzfq7YyF+5Leoeif1XqSeuytdET8=
+github.com/emersion/go-maildir v0.6.0/go.mod h1:Wpgtt9EOIJWe++WKa+JRvDwv+qIV7MeFdvZu/VbsXN4=
+github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
+github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
