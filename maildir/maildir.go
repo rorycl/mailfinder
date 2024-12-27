@@ -25,6 +25,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/rorycl/mailfinder/mail"
 )
 
 // mailDirContents are the normal subdirectory names of an enclosing
@@ -34,25 +36,12 @@ var mailDirContents []string = []string{"cur", "new", "tmp"}
 // EmptyMailDir is a sentinel error
 var EmptyMailDir error = errors.New("maildir is empty")
 
-// Mail represents a Mail file on disk
-type Mail struct {
-	Directory string
-	Name      string
-	Path      string
-}
-
-// String is a string representation of Mail for debugging
-func (m Mail) String() string {
-	tpl := "dir %s name %s path %s"
-	return fmt.Sprintf(tpl, m.Directory, m.Name, m.Path)
-}
-
 // Maildir represents the outer directory of a set of maildir
 // subdirectories (expected to be mailDirContents) and a listing of the
 // Mail items (if any) in each subdirectory.
 type MailDir struct {
 	Path     string
-	Contents []*Mail
+	Contents []*mail.Mail
 	stats    map[string]int
 	current  int // current message being read
 }
@@ -87,11 +76,10 @@ func (m *MailDir) list() error {
 			continue
 		}
 		m.stats[md] = len(contents)
-		for _, c := range contents {
-			mail := &Mail{
-				Directory: md,
-				Name:      filepath.Base(c),
-				Path:      filepath.Join(c),
+		for i, c := range contents {
+			mail := &mail.Mail{
+				Path: filepath.Join(c),
+				No:   i,
 			}
 			m.Contents = append(m.Contents, mail)
 		}
@@ -110,7 +98,7 @@ func (m *MailDir) TotalEmails() int {
 
 // Next returns the next Mail in MailDir.contents or io.EOF when
 // the contents are exhausted.
-func (m *MailDir) Next() (*Mail, error) {
+func (m *MailDir) Next() (*mail.Mail, error) {
 	m.current++
 	if m.current > len(m.Contents)-1 {
 		return nil, io.EOF
@@ -120,7 +108,7 @@ func (m *MailDir) Next() (*Mail, error) {
 
 // NextReader returns the next Mail in MailDir.contents as  Mail
 // metadata and io.Reader unless the contents are exhausted.
-func (m *MailDir) NextReader() (*Mail, io.Reader, error) {
+func (m *MailDir) NextReader() (*mail.Mail, io.Reader, error) {
 	m.current++
 	if m.current > len(m.Contents)-1 {
 		return nil, nil, io.EOF
