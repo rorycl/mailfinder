@@ -1,0 +1,455 @@
+From golang-nuts+bncBAABBUN4ZGTAMGQEJC7YT2A@googlegroups.com Tue Aug  8 16:25:10 2023
+Return-path: <golang-nuts+bncBAABBUN4ZGTAMGQEJC7YT2A@googlegroups.com>
+Envelope-to: example@test.com
+Delivery-date: Tue, 08 Aug 2023 15:25:10 +0000
+Received: from mail-yb1-f185.google.com ([209.85.219.185])
+	by campbell-lange.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <golang-nuts+bncBAABBUN4ZGTAMGQEJC7YT2A@googlegroups.com>)
+	id 1qTOa4-000BKS-0H
+	for example@test.com;
+	Tue, 08 Aug 2023 15:25:10 +0000
+Received: by mail-yb1-f185.google.com with SMTP id 3f1490d57ef6-cf4cb742715sf5970077276.2
+        for <example@test.com>; Tue, 08 Aug 2023 08:25:07 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1691508307; cv=pass;
+        d=google.com; s=arc-20160816;
+        b=xC3e2xcfA10r8NYlMFUcr3VYpg+RygmVMSzrj2JjcO+vrh1liVa31wHZHB86i3Y7lj
+         Fpcs88DAS1oNqwglN3mxTHCGLqRwNTQETnYqGzn4hFrMGwrvOhNuEbCmlAAVzOibjGnF
+         a3DEm2fibUtZ+Jojj2PxjRn4q3xcKjk0J3dG2wWQIWms32mFggrLUAA69vmlNhhBZJH+
+         YwXHZUwCSLQdTW8AVP+M3uqEQ3U3BBDd1o+x8sQ+3rN4LLs7GlQfq4qrCbmsEwLuqYUB
+         9cJgmhr+ZoZONb69WWkiChAWx8mU6/luTgRm3vWjxxjVRjhDYbBNz3JMWn5wyI65u5lK
+         olkw==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:to:subject:message-id:mime-version
+         :from:date:sender:dkim-signature;
+        bh=Pd8V5gZfDctVT+F+utKLPrJV7HkyMd/NXfoCMotZJm8=;
+        fh=LWibu/64T2IwmVq2CjcfVcroS2Ws8R9DWfYmVuW+6f4=;
+        b=SWRBFjzYubyq+82lrcU5nFGS102WrTFad52RZSO8ZVJ3Sn0yHg1BcBjGdoKHJhkbte
+         AKIHhh2uAEyzU/GYp7h52rwPJdOX7JMh9QHsHu7Ip/kEDKQ4IF84xeFqlvupRid8ucZW
+         WcfB6X0vL7JxqUb15YYQ2UWSiUh/xn0CHVSsZNYrEZtYQMj0FNE64VEwKPIu/ZUqaBue
+         zHltm0beiJb61+TzQK0uZgZaaiFhh2uNXBfoOxzjyzoAIGzTnvl/+uTHbStnBUTKvWwn
+         V91Kp3ItpmzajHRL2xL/dNJGf5TgP/HJrn5qMan3po9CSCYOMSuueQZauOI53175BkIF
+         8K8Q==
+ARC-Authentication-Results: i=2; gmr-mx.google.com;
+       dkim=pass header.i=@sendgrid.net header.s=smtpapi header.b=soOhLA80;
+       spf=pass (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net designates 149.72.154.232 as permitted sender) smtp.mailfrom="bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net";
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=golang.org
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=20221208; t=1691508307; x=1692113107;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:x-original-authentication-results
+         :x-original-sender:to:subject:message-id:mime-version:from:date
+         :sender:from:to:cc:subject:date:message-id:reply-to;
+        bh=Pd8V5gZfDctVT+F+utKLPrJV7HkyMd/NXfoCMotZJm8=;
+        b=HSdOQWuus8BzSD73yiBjmHzxRFPewucgZ9tCWJdnvT/A1efZHLmjC9Cy3FI/1/TUnA
+         zH2ldniMLt1L33R2krf8yhwTfde7IU6NLFXYMRThfSJsG3IBpXsTodxf6XIUWuDVhmer
+         GLKptdhBcodJSEs6GUX1pvJCRVO5mE6lvrUVFBdItVhQkF7bPbJZ0vPdwLJBaGfYuN27
+         gfVR12YBFy94pCC241Jkaxgjn23VKrutDwZRhcfHut78ETBCfMKvI53mpc7zQGFBOibT
+         wfNVemajSshWwOdwc218xoAoGq/g9l5r9/5OoJERq2fvaZeMa0NyXEQqiXylyfhOqyxo
+         GA+g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1691508307; x=1692113107;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:x-original-authentication-results
+         :x-original-sender:to:subject:message-id:mime-version:from:date
+         :x-beenthere:x-gm-message-state:sender:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Pd8V5gZfDctVT+F+utKLPrJV7HkyMd/NXfoCMotZJm8=;
+        b=Afqus9cXY0eZ5mHud9gx+kM5buQAZubud+z3VQf//iO8jtuquQ6fN9fIz1VVwqluG0
+         djDd8xCIycnjjhc27sCaWpIH39+p56N762LcP/dBgXzLH7LehVhRSGbN5eWjRdUQA8PX
+         sDo52xSdnJkGHULSl+qd8lEh7Yjkmh2mFG37OaAFHcAeR2FMg72V3sR51r0LJZ6eu5CJ
+         tzQZXTAQbKEWvHZhyKdIIWmkPpvU87Q9l6Wu9nNzcXCPIDxsFocuPgIFWT9qMiq4/k5l
+         d2ptxynyoST08kzDsuZ1Sv3u4/A4WG6gIE4j+rvxZ78PsYonN8rft2n/rxcQLLed5QJO
+         Twmg==
+Sender: golang-nuts@googlegroups.com
+X-Gm-Message-State: AOJu0Yy4fhlgkLbEufMunWMyGU54BbSyOawXjZNo+3yL4YmjVVL4GBdI
+	V2Nw48vWiyLz6Zb3+TE4zag=
+X-Google-Smtp-Source: AGHT+IHBddmokFKHPdopH47fdnnJgAZXclXu8mz2Il/mI3sMoRV4WXN80KtoO2hVX/EdVXYnt9MhxQ==
+X-Received: by 2002:a25:b582:0:b0:d06:c66c:6c6 with SMTP id q2-20020a25b582000000b00d06c66c06c6mr10898371ybj.0.1691508306868;
+        Tue, 08 Aug 2023 08:25:06 -0700 (PDT)
+X-BeenThere: golang-nuts@googlegroups.com
+Received: by 2002:a05:6902:100e:b0:c64:776a:a7d9 with SMTP id
+ w14-20020a056902100e00b00c64776aa7d9ls380064ybt.0.-pod-prod-01-us; Tue, 08
+ Aug 2023 08:25:04 -0700 (PDT)
+X-Received: by 2002:a9d:67d7:0:b0:6ba:8e4a:8e62 with SMTP id c23-20020a9d67d7000000b006ba8e4a8e62mr15904862otn.7.1691508196400;
+        Tue, 08 Aug 2023 08:23:16 -0700 (PDT)
+Received: by 2002:a05:6808:2209:b0:3a4:244d:fe3e with SMTP id 5614622812f47-3a7b39bbfdbmsb6e;
+        Tue, 8 Aug 2023 08:22:35 -0700 (PDT)
+X-Received: by 2002:aca:2415:0:b0:3a7:5314:e572 with SMTP id n21-20020aca2415000000b003a75314e572mr2385oic.53.1691508155104;
+        Tue, 08 Aug 2023 08:22:35 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1691508155; cv=none;
+        d=google.com; s=arc-20160816;
+        b=X9AqHqfGBQezNt84ABj9EnwWCxvibz1F/Uxocg2aJc6CC+8Y22kTN1ld1J0gwZFH2l
+         f5SpIUwRt0Nf8Z++kFhxZNUyQSPKVXkeWm5TviFJFPLjNZKlkle0vbF9Q7ysA2B7TmSC
+         p3qc2C4l7XhMGXAiKUJI8NWXnyxFxc8aXY7Vw559JnVDrtYE/Ro/9xbCbUw/Eq78P3/s
+         V1ybjscTzI2ijP/ohaUzzeXUVrSVqsw/2g8ows0uLm9lIFyU2pseYJarw98RWxGu+vKa
+         rmxvfJVf7LagM9+W6JVPsxSNEua8rdF3QF2sVOyJCa0y3Gwavd84U5S40dSH+O5lwdLl
+         5T1w==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=to:subject:message-id:mime-version:from:date:dkim-signature;
+        bh=lnJ5rLfziDA7qtC/VLHd4oimE1Kb/BKycBD43A7ZAjk=;
+        fh=LWibu/64T2IwmVq2CjcfVcroS2Ws8R9DWfYmVuW+6f4=;
+        b=luo7eUL2HXqkLSvop5e/iNkptRVn1RWQRcUkQ6rTiHGi9mZl8oIHI3gBjzBUOO9gwB
+         QRfGZH5izpwTruK4Q9arbTHy3J2aKbd1RLfVgjasppn+re8jmJYla669yDfhxDUxziY9
+         7gflQrjy7MO+xOM6RMXTEqo0Y/nruP5ZtaDUSRseq03b38d9I9NWwYorgssIXWXbCbCU
+         YHALvB4pQGzJEhr4V9YC0QgJhAKmtjxVs6ha4K3zZeWvMNlAmCXhnY94lWBW7JKzR/Ww
+         6TDZxSJT/sRElpW+0kCL6VDHFwurj/MLrZg83CZ8aG2Nxt+/mlXH//ABzq4pNwtjNCHi
+         iPjQ==
+ARC-Authentication-Results: i=1; gmr-mx.google.com;
+       dkim=pass header.i=@sendgrid.net header.s=smtpapi header.b=soOhLA80;
+       spf=pass (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net designates 149.72.154.232 as permitted sender) smtp.mailfrom="bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net";
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Received: from s.wrqvwxzv.outbound-mail.sendgrid.net (s.wrqvwxzv.outbound-mail.sendgrid.net. [149.72.154.232])
+        by gmr-mx.google.com with ESMTPS id u5-20020a0ce5c5000000b0063f7c1d1daasi727288qvm.4.2023.08.08.08.22.35
+        for <golang-nuts@googlegroups.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 08 Aug 2023 08:22:35 -0700 (PDT)
+Received-SPF: pass (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net designates 149.72.154.232 as permitted sender) client-ip=149.72.154.232;
+Received: by filterdrecv-66949dbc98-m2f25 with SMTP id filterdrecv-66949dbc98-m2f25-1-64D25D9B-57
+        2023-08-08 15:22:03.953662066 +0000 UTC m=+3847586.845637424
+Received: from OTM4NDAyNw (unknown)
+	by geopod-ismtpd-3 (SG) with HTTP
+	id eZvbmA23QgSknxT6tQCleQ
+	Tue, 08 Aug 2023 15:22:03.699 +0000 (UTC)
+Content-Type: multipart/alternative; boundary=65d955c07f6f31121accdbd068543dbe592c0e638d73f5d7b844e9fd1e4e
+Date: Tue, 08 Aug 2023 15:22:04 +0000 (UTC)
+From: announce@golang.org
+Mime-Version: 1.0
+Message-ID: <eZvbmA23QgSknxT6tQCleQ@geopod-ismtpd-3>
+Subject: [go-nuts] Go 1.21.0 is released
+X-SG-EID: =?us-ascii?Q?82m8TxfLc6Rdqa4uVanZpU2U=2Fs+qOmla+fONbNJW7LOC9xAlz=2FuEhbK+jexGsG?=
+ =?us-ascii?Q?nvd0zGyIdl=2FTutB6EGeqCQemXPPVI5f2sf4cxsI?=
+ =?us-ascii?Q?EcLCW3g50yzoHunulXMluCjFzMxZ7gGW7GHtBcn?=
+ =?us-ascii?Q?3UyKiB5zlofSTBPilR+yQ2fZ26dYQd4+8lPipj7?=
+ =?us-ascii?Q?FJTPoSXSTTMxBA=2F8P=2FQSR=2FC5gxWAf+jOlZfo3jA?=
+ =?us-ascii?Q?mHoxOGQaU2klTzhfA=3D?=
+To: golang-nuts@googlegroups.com
+X-Entity-ID: SxYclcQAHPiTJI3Btb/JiQ==
+X-Original-Sender: announce@golang.org
+X-Original-Authentication-Results: gmr-mx.google.com;       dkim=pass
+ header.i=@sendgrid.net header.s=smtpapi header.b=soOhLA80;       spf=pass
+ (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net
+ designates 149.72.154.232 as permitted sender) smtp.mailfrom="bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net";
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Precedence: list
+Mailing-list: list golang-nuts@googlegroups.com; contact golang-nuts+owners@googlegroups.com
+List-ID: <golang-nuts.googlegroups.com>
+X-Google-Group-Id: 332403668183
+List-Post: <https://groups.google.com/group/golang-nuts/post>, <mailto:golang-nuts@googlegroups.com>
+List-Help: <https://groups.google.com/support/>, <mailto:golang-nuts+help@googlegroups.com>
+List-Archive: <https://groups.google.com/group/golang-nuts
+List-Subscribe: <https://groups.google.com/group/golang-nuts/subscribe>, <mailto:golang-nuts+subscribe@googlegroups.com>
+List-Unsubscribe: <mailto:googlegroups-manage+332403668183+unsubscribe@googlegroups.com>,
+ <https://groups.google.com/group/golang-nuts/subscribe>
+Content-Length: 2713
+
+--65d955c07f6f31121accdbd068543dbe592c0e638d73f5d7b844e9fd1e4e
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
+
+Hello gophers,
+
+We have just released Go 1.21.0.
+
+To find out what has changed in Go 1.21, read the release notes:
+https://go.dev/doc/go1.21
+
+You can download binary and source distributions from our download page:
+https://go.dev/dl/#go1.21.0
+
+If you have Go installed already, an easy way to try go1.21.0
+is by using the go command:
+$ go install golang.org/dl/go1.21.0@latest
+$ go1.21.0 download
+
+To compile from source using a Git clone, update to the release with
+git checkout go1.21.0 and build as usual.
+
+Thanks to everyone who contributed to the release!
+
+Cheers,
+David and Michael for the Go team
+
+-- 
+You received this message because you are subscribed to the Google Groups "golang-nuts" group.
+To unsubscribe from this group and stop receiving emails from it, send an email to golang-nuts+unsubscribe@googlegroups.com.
+To view this discussion on the web visit https://groups.google.com/d/msgid/golang-nuts/eZvbmA23QgSknxT6tQCleQ%40geopod-ismtpd-3.
+
+--65d955c07f6f31121accdbd068543dbe592c0e638d73f5d7b844e9fd1e4e
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="UTF-8"
+Mime-Version: 1.0
+
+<p>Hello gophers,</p>
+<p>We have just released Go 1.21.0.</p>
+<p>To find out what has changed in Go 1.21, read the release notes:<br>
+<a href=3D"https://go.dev/doc/go1.21">https://go.dev/doc/go1.21</a></p>
+<p>You can download binary and source distributions from our download page:=
+<br>
+<a href=3D"https://go.dev/dl/#go1.21.0">https://go.dev/dl/#go1.21.0</a></p>
+<p>If you have Go installed already, an easy way to try go1.21.0<br>
+is by using the go command:<br>
+$ go install golang.org/dl/go1.21.0@latest<br>
+$ go1.21.0 download</p>
+<p>To compile from source using a Git clone, update to the release with<br>
+<code>git checkout go1.21.0</code> and build as usual.</p>
+<p>Thanks to everyone who contributed to the release!</p>
+<p>Cheers,<br>
+David and Michael for the Go team</p>
+
+<p></p>
+
+-- <br />
+You received this message because you are subscribed to the Google Groups &=
+quot;golang-nuts&quot; group.<br />
+To unsubscribe from this group and stop receiving emails from it, send an e=
+mail to <a href=3D"mailto:golang-nuts+unsubscribe@googlegroups.com">golang-=
+nuts+unsubscribe@googlegroups.com</a>.<br />
+To view this discussion on the web visit <a href=3D"https://groups.google.c=
+om/d/msgid/golang-nuts/eZvbmA23QgSknxT6tQCleQ%40geopod-ismtpd-3?utm_medium=
+=3Demail&utm_source=3Dfooter">https://groups.google.com/d/msgid/golang-nuts=
+/eZvbmA23QgSknxT6tQCleQ%40geopod-ismtpd-3</a>.<br />
+
+--65d955c07f6f31121accdbd068543dbe592c0e638d73f5d7b844e9fd1e4e--
+
+From golang-nuts+bncBAABB5477SUAMGQE2GXYLLA@googlegroups.com Thu Oct  5 20:35:22 2023
+Return-path: <golang-nuts+bncBAABB5477SUAMGQE2GXYLLA@googlegroups.com>
+Envelope-to: example@test.com
+Delivery-date: Thu, 05 Oct 2023 19:35:22 +0000
+Received: from mail-oo1-f59.google.com ([209.85.161.59])
+	by campbell-lange.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <golang-nuts+bncBAABB5477SUAMGQE2GXYLLA@googlegroups.com>)
+	id 1qoU82-003SxQ-0A
+	for example@test.com;
+	Thu, 05 Oct 2023 19:35:22 +0000
+Received: by mail-oo1-f59.google.com with SMTP id 006d021491bc7-57b708ce1c1sf1674900eaf.1
+        for <example@test.com>; Thu, 05 Oct 2023 12:35:21 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1696534521; cv=pass;
+        d=google.com; s=arc-20160816;
+        b=uBMLOGQP5p4FiBJwDs9FUeX/G6ntD9tRUy4Ag/5RLDuZ3cbwFe1dvDt6I4hXwcSH2l
+         efPMbNjD8UmG+4KJF3psuhYp7aOqueIkI5k4iuDthILGCAoIeURxEVsdQlfiD6+FY3hr
+         9B6c+1LSM7P6xPQGM945v9AhzHuyXz9lFAEnRDgdRiW2f2IlWLXmRlUuJp7lA3FmMQZo
+         62VIZpD/EWXmuFF7qLzJfUzJ0RVUyyBX6piVFZNOhnPVqVzXon7SHN3AKoLXIMAF67AO
+         dl+egROZ+yBUCnQ0GFZGfeC+mvhZS2hLL1XuPc+1qPZML5G5RA1jZxiHnCPpQ+A5jxZS
+         1bJg==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:to:subject:message-id:mime-version
+         :from:date:sender:dkim-signature;
+        bh=gIM2/FxWvmSVuJGH2+Q+tV9JcCUSj8azwLyWxxwgl3c=;
+        fh=w6uNyQ0H0qN+cZKdjVOZ+Vt7EXL2sUp1uev9R/SICUM=;
+        b=UsrNUIom1VfkaSLE5oQjEaZpZ3ERZDDyAwFBNl0HkMzDk+sOukw+tiMkXSfGgca3GN
+         RwB/aLoFni8GAqT5U/W484jokt7ZH8YInZdq6f/9NYdjEvSNdJ/1yc+KPGCv374rJjB2
+         Q/OHT9pNPb7MgJ9bcLvCdtAbC9Qv+IJSSrySfy3g6oqvF9zzGWXcMbUw5/CFNwbMv7Ib
+         WJpuGnFvq2BditYt/MqzDjl05XzaTeLlhxrPclfyNZ3OJdXHUDlc786NLgvHyG5Zo0f1
+         j6RBhQnbJKlLv9jBaFoQkeQ3k8hZ+zfKs3fbhOU44Jpzgh6SKNKVnacH8r5vi3oV/1VB
+         V61w==
+ARC-Authentication-Results: i=2; gmr-mx.google.com;
+       dkim=pass header.i=@sendgrid.net header.s=smtpapi header.b=EKQo2L0M;
+       spf=pass (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net designates 149.72.126.143 as permitted sender) smtp.mailfrom="bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net";
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=golang.org
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=20230601; t=1696534521; x=1697139321; darn=campbell-lange.net;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:x-original-authentication-results
+         :x-original-sender:to:subject:message-id:mime-version:from:date
+         :sender:from:to:cc:subject:date:message-id:reply-to;
+        bh=gIM2/FxWvmSVuJGH2+Q+tV9JcCUSj8azwLyWxxwgl3c=;
+        b=eQkbMrQb2zMC+qm7LYZ89ViURe8ZLC1e6ZvGN5WRAJvAbfXIighpRAd9CUks1h1wU9
+         z7qeauyyGjQMUzhZWq06vu+R/ZfharWmQ2iK/zpEroaznmdvgGSA5m3SnZUC2nE1Vi1A
+         FJTclUu2r6u/7m32S8ba1S26OxlPIpMnM3uGfTH0a5dpMJiocHXA4qfUD4kljop/l9JQ
+         z/YStLonv/6BSYEjOSWQTedDKC3BDITxXIGBGEfJ18D4qFogCFJExro5ttIfN2I3G/aE
+         A3VSt/Dwyu3x4TlITzxCn9ZImk3+ApDsa59Cj8upJNXTCeR4Ss0efstizDAbhlnO/Rh6
+         dqiQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1696534521; x=1697139321;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:x-original-authentication-results
+         :x-original-sender:to:subject:message-id:mime-version:from:date
+         :x-beenthere:x-gm-message-state:sender:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=gIM2/FxWvmSVuJGH2+Q+tV9JcCUSj8azwLyWxxwgl3c=;
+        b=Sot8eMi57wp4IK7/bmOIumTvaa7QKuFYE2v9pD3dJrUSCbezoahd+aTN7F5xzKrGRA
+         YcAIxcAlKV1kzKLxPTrfPdl+SxJuCdMRrBQsx9mEbyMBxrnBjI4VpTm5w/3aHIKq1VqT
+         UH8ywhBN3C6QHMTt6dZ/xJRJyvq8Q7MbCFftCpk5T91zE7VBTct4w5y+EYeMiWHZ7y6m
+         zNB4o/jAdjJnAJWtLWWnlv5C7hWCgDlokf2UlQlY2oSGFum50hiOzR2Ks7uQNmtBg9CW
+         +yPXaFlITDCtEAShSuhH4Q6Wmuho+m/RhMuf5mJHQw5+HeXrl2z8M8j/K0irD07HzH8d
+         gXcA==
+Sender: golang-nuts@googlegroups.com
+X-Gm-Message-State: AOJu0YzQ75lTgHejBbYcntQQq4SbTyvFIgT+mMsduuGQrVkeeaUdXr/D
+	wyo9+XwlAGOGYW+akp3I4Fo=
+X-Google-Smtp-Source: AGHT+IELH9GQGuHKCvG+56qiweauaRObrpKKfczKfy0CcMbsiw6TFArXM4981/Wk4Ohpux5oL/WDNA==
+X-Received: by 2002:a4a:e3c7:0:b0:57e:ac1:6442 with SMTP id m7-20020a4ae3c7000000b0057e0ac16442mr1277971oov.4.1696534520896;
+        Thu, 05 Oct 2023 12:35:20 -0700 (PDT)
+X-BeenThere: golang-nuts@googlegroups.com
+Received: by 2002:a4a:4f4a:0:b0:57b:6ab1:a1f8 with SMTP id c71-20020a4a4f4a000000b0057b6ab1a1f8ls1042074oob.2.-pod-prod-08-us;
+ Thu, 05 Oct 2023 12:35:19 -0700 (PDT)
+X-Received: by 2002:a05:6808:2390:b0:3a7:392a:7405 with SMTP id bp16-20020a056808239000b003a7392a7405mr3393277oib.2.1696534519067;
+        Thu, 05 Oct 2023 12:35:19 -0700 (PDT)
+Received: by 2002:a05:690c:dc8:b0:594:e68b:77ea with SMTP id 00721157ae682-5a4f354d178ms7b3;
+        Thu, 5 Oct 2023 12:34:39 -0700 (PDT)
+X-Received: by 2002:a81:8402:0:b0:589:e815:8d71 with SMTP id u2-20020a818402000000b00589e8158d71mr2595962ywf.11.1696534478560;
+        Thu, 05 Oct 2023 12:34:38 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1696534478; cv=none;
+        d=google.com; s=arc-20160816;
+        b=vMs1dnMBcO02pIDpFxhNYhDViE0Z1qDWh5RVfIB2uoxRPa/3+uVATbZZ1xUkzkOsn2
+         nj2ShfwD4leEIha2HXvTL32HkVY4TTXCeat+LBh56tRzFmYAu1ONTF6QWLNkwd5RO8eR
+         O6X4N7qLHewf5w3glRRRxt677B8rIQjBxYoHaUJO07tnEcfVTOyVw38+VWETJ3J02T/S
+         1QD1453LRU5ptl2LEidNbGtM9smQrJcnbzjYZjlF51JDK6pERDBAtNmE4Ob3xr0S5u02
+         NN8R4iwIi+uhLWeEH+rm4ikpZibOcE+FlwHnBF7JYkVZ16YWFbFK1daScvHP6yUbWLUn
+         u+UQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=to:subject:message-id:mime-version:from:date:dkim-signature;
+        bh=zkVlioNrfpLzoY/lGmReY7Ik5T90mmscAJ8Q/+0rxVg=;
+        fh=w6uNyQ0H0qN+cZKdjVOZ+Vt7EXL2sUp1uev9R/SICUM=;
+        b=I9IcV4RSmc3oDaXqN2ixWn0qnUCJXi5yAdc1NJjd7wFXadTiXFwhoM9yU2UaxHSyXP
+         PkoaSLjqPx9mF3JuvX00bN/j0qf6jrjBpPL0wh38m2x8RTN9BvJkn1BSvPrq1ebUr8bq
+         WN6AYUAtCX6DjTsSNrEQtJpZFR/eKwNroyrgHcj0Pyc9PV9DXTmJsDtBI7oGPgbTeQKb
+         TMbLO7iGT3A0DctE1llrihprvc1zuxLHFopa/ywBjU/fEf+5Wpc7UPb3yOzuUGjh+u2f
+         BSPz8C1tcNupx7RDgd8EUboBsYON82D3fnUY7mtZZoMm6WmJdsFgQWWnrKoCnOux+LUk
+         a1wg==
+ARC-Authentication-Results: i=1; gmr-mx.google.com;
+       dkim=pass header.i=@sendgrid.net header.s=smtpapi header.b=EKQo2L0M;
+       spf=pass (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net designates 149.72.126.143 as permitted sender) smtp.mailfrom="bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net";
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Received: from s.wrqvtzvf.outbound-mail.sendgrid.net (s.wrqvtzvf.outbound-mail.sendgrid.net. [149.72.126.143])
+        by gmr-mx.google.com with ESMTPS id fl12-20020a05690c338c00b00594e41e9fbesi151795ywb.0.2023.10.05.12.34.37
+        for <golang-nuts@googlegroups.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 05 Oct 2023 12:34:38 -0700 (PDT)
+Received-SPF: pass (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net designates 149.72.126.143 as permitted sender) client-ip=149.72.126.143;
+Received: by filterdrecv-8684c58db7-nfltn with SMTP id filterdrecv-8684c58db7-nfltn-1-651F0FCC-26
+        2023-10-05 19:34:36.552517959 +0000 UTC m=+691648.613011688
+Received: from OTM4NDAyNw (unknown)
+	by geopod-ismtpd-canary-0 (SG) with HTTP
+	id iZ476FLbQ22_5Va2bniaXw
+	Thu, 05 Oct 2023 19:34:36.398 +0000 (UTC)
+Content-Type: multipart/alternative; boundary=938be5f6e5db6d84ebc151d5e8ea159e0d1ff3720370056f7ba72fe79dda
+Date: Thu, 05 Oct 2023 19:34:36 +0000 (UTC)
+From: announce@golang.org
+Mime-Version: 1.0
+Message-ID: <iZ476FLbQ22_5Va2bniaXw@geopod-ismtpd-canary-0>
+Subject: [go-nuts] [security] Go 1.21.2 and Go 1.20.9 are released
+X-SG-EID: =?us-ascii?Q?82m8TxfLc6Rdqa4uVanZpU2U=2Fs+qOmla+fONbNJW7LN1xYFpiKtfbfuNVZzHiy?=
+ =?us-ascii?Q?VMCq4GQbevcMMAP9s08hhtXN8we+scY0KwF9wRi?=
+ =?us-ascii?Q?sMnjm6HXkhIfUohXvyV65qKet2TcrTMiFx6DLnN?=
+ =?us-ascii?Q?HNKv3a8omd6vzkqgcfywA7suPdWoTAAQC6QLOAx?=
+ =?us-ascii?Q?mcfp3hx48Ala6t3ormEH7LURVyB5ds3JlNGZLsI?=
+ =?us-ascii?Q?pYIggxkOacVe9fN7o=3D?=
+To: golang-nuts@googlegroups.com
+X-Entity-ID: SxYclcQAHPiTJI3Btb/JiQ==
+X-Original-Sender: announce@golang.org
+X-Original-Authentication-Results: gmr-mx.google.com;       dkim=pass
+ header.i=@sendgrid.net header.s=smtpapi header.b=EKQo2L0M;       spf=pass
+ (google.com: domain of bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net
+ designates 149.72.126.143 as permitted sender) smtp.mailfrom="bounces+9384027-6ee4-golang-nuts=googlegroups.com@sendgrid.net";
+       dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Precedence: list
+Mailing-list: list golang-nuts@googlegroups.com; contact golang-nuts+owners@googlegroups.com
+List-ID: <golang-nuts.googlegroups.com>
+X-Google-Group-Id: 332403668183
+List-Post: <https://groups.google.com/group/golang-nuts/post>, <mailto:golang-nuts@googlegroups.com>
+List-Help: <https://groups.google.com/support/>, <mailto:golang-nuts+help@googlegroups.com>
+List-Archive: <https://groups.google.com/group/golang-nuts
+List-Subscribe: <https://groups.google.com/group/golang-nuts/subscribe>, <mailto:golang-nuts+subscribe@googlegroups.com>
+List-Unsubscribe: <mailto:googlegroups-manage+332403668183+unsubscribe@googlegroups.com>,
+ <https://groups.google.com/group/golang-nuts/subscribe>
+Content-Length: 3905
+
+--938be5f6e5db6d84ebc151d5e8ea159e0d1ff3720370056f7ba72fe79dda
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
+
+Hello gophers,
+
+We have just released Go versions 1.21.2 and 1.20.9, minor point releases.
+
+These minor releases include 1 security fixes following the security policy <https://go.dev/security>:
+
+-	cmd/go: line directives allows arbitrary execution during build
+
+	"//line" directives can be used to bypass the restrictions on "//go:cgo_"
+	directives, allowing blocked linker and compiler flags to be passed during
+	compliation. This can result in unexpected execution of arbitrary code when
+	running "go build". The line directive requires the absolute path of the file in
+	which the directive lives, which makes exploting this issue significantly more
+	complex.
+
+	This is CVE-2023-39323 and Go issue https://go.dev/issue/63211.
+
+View the release notes for more information:
+https://go.dev/doc/devel/release#go1.21.2
+
+You can download binary and source distributions from the Go website:
+https://go.dev/dl/
+
+To compile from source using a Git clone, update to the release with
+git checkout go1.21.2 and build as usual.
+
+Thanks to everyone who contributed to the releases.
+
+Cheers,
+Than and Michael for the Go team
+
+-- 
+You received this message because you are subscribed to the Google Groups "golang-nuts" group.
+To unsubscribe from this group and stop receiving emails from it, send an email to golang-nuts+unsubscribe@googlegroups.com.
+To view this discussion on the web visit https://groups.google.com/d/msgid/golang-nuts/iZ476FLbQ22_5Va2bniaXw%40geopod-ismtpd-canary-0.
+
+--938be5f6e5db6d84ebc151d5e8ea159e0d1ff3720370056f7ba72fe79dda
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="UTF-8"
+Mime-Version: 1.0
+
+<p>Hello gophers,</p>
+<p>We have just released Go versions 1.21.2 and 1.20.9, minor point release=
+s.</p>
+<p>These minor releases include 1 security fixes following the <a href=3D"h=
+ttps://go.dev/security">security policy</a>:</p>
+<ul>
+<li>
+<p>cmd/go: line directives allows arbitrary execution during build</p>
+<p>&quot;//line&quot; directives can be used to bypass the restrictions on =
+&quot;//go:cgo_&quot;<br>
+directives, allowing blocked linker and compiler flags to be passed during<=
+br>
+compliation. This can result in unexpected execution of arbitrary code when=
+<br>
+running &quot;go build&quot;. The line directive requires the absolute path=
+ of the file in<br>
+which the directive lives, which makes exploting this issue significantly m=
+ore<br>
+complex.</p>
+<p>This is CVE-2023-39323 and Go issue <a href=3D"https://go.dev/issue/6321=
+1">https://go.dev/issue/63211</a>.</p>
+</li>
+</ul>
+<p>View the release notes for more information:<br>
+<a href=3D"https://go.dev/doc/devel/release#go1.21.2">https://go.dev/doc/de=
+vel/release#go1.21.2</a></p>
+<p>You can download binary and source distributions from the Go website:<br=
+>
+<a href=3D"https://go.dev/dl/">https://go.dev/dl/</a></p>
+<p>To compile from source using a Git clone, update to the release with<br>
+<code>git checkout go1.21.2</code> and build as usual.</p>
+<p>Thanks to everyone who contributed to the releases.</p>
+<p>Cheers,<br>
+Than and Michael for the Go team</p>
+
+<p></p>
+
+-- <br />
+You received this message because you are subscribed to the Google Groups &=
+quot;golang-nuts&quot; group.<br />
+To unsubscribe from this group and stop receiving emails from it, send an e=
+mail to <a href=3D"mailto:golang-nuts+unsubscribe@googlegroups.com">golang-=
+nuts+unsubscribe@googlegroups.com</a>.<br />
+To view this discussion on the web visit <a href=3D"https://groups.google.c=
+om/d/msgid/golang-nuts/iZ476FLbQ22_5Va2bniaXw%40geopod-ismtpd-canary-0?utm_=
+medium=3Demail&utm_source=3Dfooter">https://groups.google.com/d/msgid/golan=
+g-nuts/iZ476FLbQ22_5Va2bniaXw%40geopod-ismtpd-canary-0</a>.<br />
+
+--938be5f6e5db6d84ebc151d5e8ea159e0d1ff3720370056f7ba72fe79dda--
+

@@ -1,0 +1,214 @@
+From golang-nuts+bncBCYN5RW53QLRBE5YZGUAMGQEBCFAB5Y@googlegroups.com Tue Sep 26 05:20:39 2023
+Return-path: <golang-nuts+bncBCYN5RW53QLRBE5YZGUAMGQEBCFAB5Y@googlegroups.com>
+Envelope-to: example@test.com
+Delivery-date: Tue, 26 Sep 2023 04:20:39 +0000
+Received: from mail-qt1-f185.google.com ([209.85.160.185])
+	by example-test.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <golang-nuts+bncBCYN5RW53QLRBE5YZGUAMGQEBCFAB5Y@googlegroups.com>)
+	id 1qkzYs-002soA-1h
+	for example@test.com;
+	Tue, 26 Sep 2023 04:20:39 +0000
+Received: by mail-qt1-f185.google.com with SMTP id d75a77b69052e-4180b3a5119sf88692961cf.1
+        for <example@test.com>; Mon, 25 Sep 2023 21:20:38 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1695702037; cv=pass;
+        d=google.com; s=arc-20160816;
+        b=DSNJCgWB/RnyYJeC6Rx2TohFd7txdXVwxIdHvGnTJE7Y7LeNCpH+7Ph60Ls5KsNrpo
+         ItRuFsP8gGw8smWACLqI2IY6wotU5OC27oniaWtyfxVMhZ4/aGta9j5aXZUI4u+nKpMi
+         Rw7dkhU/k2i8f0tIE3Is0Krk8/4rdwpH3R/Z+NpAJ6cijFBhLainID0dFnZdyUSaQTah
+         l4T0WKBlsCD3FujVR7pDsBKo/T37JYe+ZdBhop6olUAh05o7e9s39zQMBI3hoAkCyz60
+         YlzJX4DcuTKTnZgqoQDDejWrmqIlO1yyHGhprl2kMUNnsNAtOtK6l+mii4bACflR7WN3
+         R/BA==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:content-transfer-encoding:cc:to
+         :subject:message-id:date:from:in-reply-to:references:mime-version
+         :sender:dkim-signature;
+        bh=gyOH9xslrUsA6jlfcrs9rJ8azNm7fDejLsKoaU+dyTY=;
+        fh=yummoCJHHIZRaRPnTBJi0KKPMwkMQwu1KY8sU18HzZc=;
+        b=jfh/t7D51Q/77qaRzGEo7Ddy5nIfx7OueKO3TiRzqI1ywRXpS8yKrGksLsl8CfIQUB
+         FWlU4PVyiu1tLiJHGzGLT/IribbfJn2UjVg7pVY8TlUxR4rQtz0eqbeq6Vx8Iw41eatp
+         nm5tzAqb8Ox7/GzBYa5g9KBWBTHvOaV2a2+FIqA1U23C6OnRnBfHRLg+qlmjL7hPxr9W
+         cceTU9cMGh3JQbW3qrShwMc5eGsRBH8OqEkc3vpX09T+2N++ah/vPR4JtnKzpXNtwXpi
+         0g5zd72bfw+mAiOu0EZK0AS8+Wztb/hOQwIXawQM1LWM1IuqaQ7jQakYZn76DeuHw88h
+         jRfA==
+ARC-Authentication-Results: i=2; gmr-mx.google.com;
+       dkim=pass header.i=@golang-org.20230601.gappssmtp.com header.s=20230601 header.b=hoPojTYN;
+       spf=pass (google.com: domain of iant@golang.org designates 2607:f8b0:4864:20::435 as permitted sender) smtp.mailfrom=iant@golang.org;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=golang.org
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=20230601; t=1695702037; x=1696306837; darn=example-test.com;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :list-id:mailing-list:precedence:x-original-authentication-results
+         :x-original-sender:content-transfer-encoding:cc:to:subject
+         :message-id:date:from:in-reply-to:references:mime-version:sender
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=gyOH9xslrUsA6jlfcrs9rJ8azNm7fDejLsKoaU+dyTY=;
+        b=ZG8aB1q5Qt0SpN9c/T5Q3e86Cx7+VG8zo9fe50dn7chNnWaHpF2S+sWnZ9ODluEZ6j
+         pZtOwqbCsqTAu360NDJCxCisM+7oY+qKD2pDg0XLpAA98y570vmygVXmV+mjEpPiwEWs
+         NIdtj7GXx78/S0Psvb0iJdUtr6EmLANIwYCkqoGoH1QnImxpqzNwOKeYaMRv8rkuir+e
+         XsruN2WDa9CuZYi0WkpufjvKDn2oe2c5TNrOef/c3SmGeFrFFV1BjKm6X07zc5hVjCXy
+         8gcnXFO5DFb545EpNsg22R692/JkFwseq4TqICpHWueEic3bqhLc4wrWFfkSeUwxpqwq
+         5vAQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1695702037; x=1696306837;
+        h=list-unsubscribe:list-subscribe:list-archive:list-help:list-post
+         :x-spam-checked-in-group:list-id:mailing-list:precedence
+         :x-original-authentication-results:x-original-sender
+         :content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-beenthere:x-gm-message-state
+         :sender:from:to:cc:subject:date:message-id:reply-to;
+        bh=gyOH9xslrUsA6jlfcrs9rJ8azNm7fDejLsKoaU+dyTY=;
+        b=UXCuSac06gbwVzYNAROPhJErA1gmqOlFh+x4bY/D5BSPjCPwj8rt0XvnyUgONYqJIJ
+         3bbpRnKclfhOHgt3kIvc5NDqVQ03Z8bWuUnFWilA1y3r9hl7+RGIIZC7O9z0ICeMzq0l
+         86YfGc5DI4MmAsPVB4+/mAUoLJBSTclKaJo3tz14hOLsSz8kd+FexjTktECpZgftveaL
+         hvkrm7e7deAp7G0ZE12yE187jMTt5S3JgDQNE09W1bEuU5e1xsP7bkWvPyba+GRJI6rh
+         FNxrGK2wiv3o5u4eG1Ju46CJa4plnRe9HnVulZIrUsL0tugLEmeQJrhGY6Q+/qiPRPxw
+         XbWQ==
+Sender: golang-nuts@googlegroups.com
+X-Gm-Message-State: AOJu0YwdCP5Epd+tCxlyK/F8aGhzeiCvPqCS8d/QZIMDrLNDB1aoT/RY
+	RZ9cDMDF2IYcbgCE/Du7tQo=
+X-Google-Smtp-Source: AGHT+IHP7NzX7RLUQmop2uIC1Byu+UKRdlSyOtAAvnGikr33lwOqW54wosSkqIdz9P70hBBrU7Y9eA==
+X-Received: by 2002:a05:622a:548:b0:417:a5a0:9f4f with SMTP id m8-20020a05622a054800b00417a5a09f4fmr11499438qtx.60.1695702037069;
+        Mon, 25 Sep 2023 21:20:37 -0700 (PDT)
+X-BeenThere: golang-nuts@googlegroups.com
+Received: by 2002:ac8:538d:0:b0:411:f89f:d135 with SMTP id x13-20020ac8538d000000b00411f89fd135ls2928392qtp.1.-pod-prod-01-us;
+ Mon, 25 Sep 2023 21:20:35 -0700 (PDT)
+X-Received: by 2002:a05:620a:4506:b0:76d:bc1b:c491 with SMTP id t6-20020a05620a450600b0076dbc1bc491mr10875641qkp.14.1695702035050;
+        Mon, 25 Sep 2023 21:20:35 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1695702035; cv=none;
+        d=google.com; s=arc-20160816;
+        b=Q/vrdW4V7b8jNeZpNXzeA1L3JEFBLqrfeMoHdyZ/NCYN81I9xLIQm/LE2ftbTYpikG
+         jCwc6xj/g0Q12prowL3DmU/vE1nrbHx89aWC4ek7TdUexYZUs51TmKzyb1uhTzIji7Q9
+         /FANmzNmSIur5u7QgrEtkcv3MHVL6eh8p5ercXd20QPsFra6fZ4R8va86aFvVkKhMVBo
+         81YcTpMUkL91edUagEuPnIUcdc9AoxIFFANml1m5VCUklcslPsKraFmZlLsA4yJm4igA
+         PUNtWFSU0Nu/uf112b3pMI5nU8jZdpzJ6yvFW46JWbSVhVPBohHlvEHZccrtDGHGR0r8
+         zUJQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=/VaJ5qh7ZuRJboPMxRidT5lDjBedIrO8wuWZm+4Mx2g=;
+        fh=yummoCJHHIZRaRPnTBJi0KKPMwkMQwu1KY8sU18HzZc=;
+        b=QA/dOE4MqMhivNWcgZXiv2IZwqxe/6/ELDPsspOTXXaJ9fMW68VAvgSnOeI2SxBaOy
+         xgw7AJrMXU6nwUs8eLtNSSPpiXt1BumFmX/l0uOUqmbLPtLPAoXyKuO+9f2JuUmLAp8m
+         UocmYbXtgQDGJw7WyVQMYRVbBsbNpjtuQy8+1Y4Tz1iVdfET7Bny9HP9LX173jtANtPQ
+         hu14+eflHmt+NoTEUIh48Jx++mDcPjZfjIwNm5xMa1Ev5wdjJXRFJJNq4B4USSg59uGT
+         DIwAge9Ic7q4/ND65VAAkrKo6seJJfx0s4ugUI6Lu0eCip6CuWWEiskv8Wjy5AAOhqUY
+         iLMw==
+ARC-Authentication-Results: i=1; gmr-mx.google.com;
+       dkim=pass header.i=@golang-org.20230601.gappssmtp.com header.s=20230601 header.b=hoPojTYN;
+       spf=pass (google.com: domain of iant@golang.org designates 2607:f8b0:4864:20::435 as permitted sender) smtp.mailfrom=iant@golang.org;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Received: from mail-pf1-x435.google.com (mail-pf1-x435.google.com. [2607:f8b0:4864:20::435])
+        by gmr-mx.google.com with ESMTPS id dw22-20020a05620a601600b0076709fdb678si1161196qkb.4.2023.09.25.21.20.35
+        for <golang-nuts@googlegroups.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 25 Sep 2023 21:20:35 -0700 (PDT)
+Received-SPF: pass (google.com: domain of iant@golang.org designates 2607:f8b0:4864:20::435 as permitted sender) client-ip=2607:f8b0:4864:20::435;
+Received: by mail-pf1-x435.google.com with SMTP id d2e1a72fcca58-692a9bc32bcso4805589b3a.2
+        for <golang-nuts@googlegroups.com>; Mon, 25 Sep 2023 21:20:34 -0700 (PDT)
+X-Received: by 2002:a05:6a20:9756:b0:14d:9bd1:6361 with SMTP id
+ hs22-20020a056a20975600b0014d9bd16361mr6240693pzc.11.1695702034556; Mon, 25
+ Sep 2023 21:20:34 -0700 (PDT)
+MIME-Version: 1.0
+References: <D81654F3-8CF7-4FE9-9477-261A305C19D5@gmail.com>
+In-Reply-To: <D81654F3-8CF7-4FE9-9477-261A305C19D5@gmail.com>
+From: ABC <abc@golang.org>
+Date: Mon, 25 Sep 2023 21:20:23 -0700
+Message-ID: <CAOyqgcUYh6rrqEzaN07MVaTxmxWeKOaqZOK8jUug4BifzzLyJg@mail.gmail.com>
+Subject: Re: [go-nuts] cgo and dynamic linking of shared labraries
+To: sbezverk <sbezverk@gmail.com>
+Cc: golang-nuts@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: iant@golang.org
+X-Original-Authentication-Results: gmr-mx.google.com;       dkim=pass
+ header.i=@golang-org.20230601.gappssmtp.com header.s=20230601
+ header.b=hoPojTYN;       spf=pass (google.com: domain of iant@golang.org
+ designates 2607:f8b0:4864:20::435 as permitted sender) smtp.mailfrom=iant@golang.org;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Precedence: list
+Mailing-list: list golang-nuts@googlegroups.com; contact golang-nuts+owners@googlegroups.com
+List-ID: <golang-nuts.googlegroups.com>
+X-Spam-Checked-In-Group: golang-nuts@googlegroups.com
+X-Google-Group-Id: 332403668183
+List-Post: <https://groups.google.com/group/golang-nuts/post>, <mailto:golang-nuts@googlegroups.com>
+List-Help: <https://groups.google.com/support/>, <mailto:golang-nuts+help@googlegroups.com>
+List-Archive: <https://groups.google.com/group/golang-nuts
+List-Subscribe: <https://groups.google.com/group/golang-nuts/subscribe>, <mailto:golang-nuts+subscribe@googlegroups.com>
+List-Unsubscribe: <mailto:googlegroups-manage+332403668183+unsubscribe@googlegroups.com>,
+ <https://groups.google.com/group/golang-nuts/subscribe>
+Content-Length: 2408
+
+On Sat, Sep 23, 2023 at 6:38=E2=80=AFAM redacted <redacted@gmail.com> wrote=
+:
+>
+> Since I could not find the answer in the cgo documentation, I would reall=
+y appreciate if somebody could help me to understand why when I build cgo c=
+ode with calls to the shared library, the linker tries to find the shared l=
+ibrary even though it is instructed to build dynamic binary and not static.
+>
+>
+>
+> I have C built shared library, I have no control how it gets built, I onl=
+y have lib_blahblah_x64_86.so . There are 2 external functions bind_wrapper=
+/unbind_wrapper in that library which I call from cgo.
+>
+>
+>
+> Here is the command line I use to compile:
+>
+>
+>
+> CC=3D/bin/tools/llvm11/llvm-11.0-p25/bin/clang-11 go build -o go_connect =
+-linkshared -ldflags "-linkmode external -extldflags -dynamic" go_connect.g=
+o
+>
+>
+>
+> The compilation succeeds, but the linker is complaining:
+>
+>
+>
+> /tmp/go-link-2323626149/000001.o: In function `_cgo_df3b8c92b86e_Cfunc_bi=
+nd_wrapper':
+>
+> /tmp/go-build/cgo-gcc-prolog:68: undefined reference to `bind_wrapper'
+>
+> /tmp/go-link-2323626149/000001.o: In function `_cgo_df3b8c92b86e_Cfunc_un=
+bind_wrapper':
+>
+> /tmp/go-build/cgo-gcc-prolog:87: undefined reference to `unbind_wrapper'
+>
+> clang-11: error: linker command failed with exit code 1 (use -v to see in=
+vocation)
+>
+>
+>
+>
+>
+> My expectation was that the linker will not check external references to =
+these functions while building the binary, and only when the binary is exec=
+uted, the dynamic linker will attempt to resolve them.  I am suspecting I g=
+ot something wrong, appreciate if somebody could provide some suggestions.
+
+Usually people use #cgo LDFLAGS lines to tell cgo where to find the
+shared library you need to link against.  You can also use the LDFLAGS
+environment variable to do this.
+
+The basic issue is that cgo needs to see the definition of the C
+function so that it knows what its arguments are, including their
+types.  It needs the information in order to generate a call to the
+function.
+
+XYZ
+
+--=20
+You received this message because you are subscribed to the Google Groups "=
+golang-nuts" group.
+To unsubscribe from this group and stop receiving emails from it, send an e=
+mail to golang-nuts+unsubscribe@googlegroups.com.
+To view this discussion on the web visit https://groups.google.com/d/msgid/=
+golang-nuts/CAOyqgcUYh6rrqEzaN07MVaTxmxWeKOaqZOK8jUug4BifzzLyJg%40mail.gmai=
+l.com.
+
