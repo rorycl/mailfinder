@@ -132,7 +132,7 @@ func TestFinder(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			got, err := Finder(f, tt.patterns)
+			got, _, err := Finder(f, tt.patterns)
 			if err != nil {
 				t.Fatal(err)
 			}

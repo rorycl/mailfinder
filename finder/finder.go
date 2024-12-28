@@ -33,21 +33,24 @@ func searchHTML(content string, searchers []*regexp.Regexp) (bool, error) {
 }
 
 // Finder searches the
-func Finder(r io.Reader, searchers []*regexp.Regexp) (bool, error) {
+func Finder(r io.Reader, searchers []*regexp.Regexp) (bool, *letters.Headers, error) {
 	if len(searchers) == 0 {
-		return false, errors.New("no regular expressions received")
+		return false, nil, errors.New("no regular expressions received")
 	}
 	email, err := letters.ParseEmail(r)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 	switch {
 	case email.Text != "":
-		return searchText(email.Text, searchers)
+		ok, err := searchText(email.Text, searchers)
+		return ok, &email.Headers, err
 	case email.EnrichedText != "":
-		return searchEnrichedText(email.EnrichedText, searchers)
+		ok, err := searchEnrichedText(email.EnrichedText, searchers)
+		return ok, &email.Headers, err
 	case email.HTML != "":
-		return searchHTML(email.HTML, searchers)
+		ok, err := searchEnrichedText(email.HTML, searchers)
+		return ok, &email.Headers, err
 	}
-	return false, nil
+	return false, nil, nil
 }
