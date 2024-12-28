@@ -85,7 +85,7 @@ testdata/example/new/1735238277.2023287_3.rory-t470s
 	// check contents of last file
 	lastFileHeader := `
 testdata/example/new/1735238277.2023287_3.rory-t470s
-From: bent at clark.net (Ben Taylor)
+From: example@clark.net (Ben Taylor)
 Date: Wed, 1 Mar 2000 14:52:56 -0500 (EST)
 Subject: Post-compile RSA error with 1.2.2, Solaris 7, OpenSSL 0.9.5
 In-Reply-To: <Pine.GSO.4.05.10003011417440.7189-100000@shell.clark.net>`

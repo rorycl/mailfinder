@@ -11,6 +11,7 @@ regular expressions, saving the output to a unix mbox.
     -d 2.maildir/ -d 3.maildir/
     -s "(?i)(regular|expression)"
     -o regular_expression.mbox
+```
 
 ## License
 
