@@ -6,8 +6,9 @@ import (
 	"io"
 	"os"
 
-	mbox "github.com/ProtonMail/go-mbox"
 	"github.com/rorycl/mailfinder/mail"
+
+	mbox "github.com/ProtonMail/go-mbox"
 )
 
 // Mbox represents an mbox file on disk with related go-mbox reader and

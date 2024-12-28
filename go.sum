@@ -1,5 +1,7 @@
 github.com/ProtonMail/go-mbox v1.1.0 h1:vrEcpvX5YfOkld5Q2fil41gXnLbYWKbE2gezZr6rqBU=
 github.com/ProtonMail/go-mbox v1.1.0/go.mod h1:ToecLYsf8RlxhndDEdjUa+eIfxuTxSQcxUQcGF6XB3A=
+github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
+github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/k3a/html2text v1.2.1 h1:nvnKgBvBR/myqrwfLuiqecUtaK1lB9hGziIJKatNFVY=
