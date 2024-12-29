@@ -11,8 +11,6 @@ import (
 	"github.com/rorycl/mailfinder/mail"
 	"github.com/rorycl/mailfinder/maildir"
 	"github.com/rorycl/mailfinder/mbox"
-
-	protonMbox "github.com/ProtonMail/go-mbox"
 )
 
 type ReadNextMail interface {
@@ -48,14 +46,19 @@ func main() {
 
 	ms := []ReadNextMail{m1, m2, m3}
 
-	output, err := os.Create("/tmp/testOutput.mbox")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer output.Close()
 
-	mboxWriter := protonMbox.NewWriter(output)
+	fn := "/tmp/testOutput.mbox"
+	_ = os.Remove(fn)
+	mbw, err := mbox.NewMboxWriter(fn)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer mbw.Close()
 
 	for i, mm := range ms {
 		for {
@@ -80,12 +83,8 @@ func main() {
 				continue // hopefully the gc will clean up buf
 			}
 			fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", i, m.Path, m.No)
-			w, err := mboxWriter.CreateMessage(headers.From[0].Address, headers.Date)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			_, err = io.Copy(w, buf)
+
+			err = mbw.Add(headers.From[0].Address, headers.Date, buf)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)

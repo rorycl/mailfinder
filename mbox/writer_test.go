@@ -3,7 +3,6 @@ package mbox
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -32,7 +31,7 @@ func emailCreator(dateString, header string) (time.Time, io.Reader) {
 }
 
 func TestMboxWriter(t *testing.T) {
-	file, err := ioutil.TempFile("", "mboxtest_*.mbox")
+	file, err := os.CreateTemp("", "mboxtest_*.mbox")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +73,7 @@ func TestMboxWriter(t *testing.T) {
 }
 
 func TestFailMboxWriter(t *testing.T) {
-	file, err := ioutil.TempFile("", "mboxtest_*.mbox")
+	file, err := os.CreateTemp("", "mboxtest_*.mbox")
 	if err != nil {
 		t.Fatal(err)
 	}
