@@ -77,8 +77,7 @@ func main() {
 				os.Exit(1)
 			}
 			if !ok {
-				buf = nil
-				continue
+				continue // hopefully the gc will clean up buf
 			}
 			fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", i, m.Path, m.No)
 			w, err := mboxWriter.CreateMessage(headers.From[0].Address, headers.Date)
@@ -86,7 +85,11 @@ func main() {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			io.Copy(w, buf)
+			_, err = io.Copy(w, buf)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 	}
 }

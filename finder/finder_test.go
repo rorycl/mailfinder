@@ -61,7 +61,7 @@ func TestSearchText(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := got, tt.ok; got != want {
-				fmt.Errorf("got %t want %t", got, want)
+				t.Errorf("got %t want %t", got, want)
 			}
 		})
 	}
@@ -98,7 +98,7 @@ func TestSearchHTML(t *testing.T) {
 				t.Fatal(err)
 			}
 			if got, want := got, tt.ok; got != want {
-				fmt.Errorf("got %t want %t", got, want)
+				t.Errorf("got %t want %t", got, want)
 			}
 		})
 	}
@@ -106,16 +106,13 @@ func TestSearchHTML(t *testing.T) {
 
 func TestFinder(t *testing.T) {
 
-	f, err := os.Open("testdata/test.eml")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	tests := []struct {
+		file     string
 		patterns []*regexp.Regexp
 		ok       bool
 	}{
 		{
+			file: "testdata/test_txt.eml",
 			patterns: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
@@ -123,6 +120,23 @@ func TestFinder(t *testing.T) {
 			ok: true,
 		},
 		{
+			file: "testdata/test_html.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("test.*golang"),
+				regexp.MustCompile("(?i)this section"),
+			},
+			ok: true,
+		},
+		{
+			file: "testdata/test_enriched.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("test.*golang"),
+				regexp.MustCompile("(?i)this section"),
+			},
+			ok: true,
+		},
+		{
+			file: "testdata/test_txt.eml",
 			patterns: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),
 			},
@@ -132,18 +146,19 @@ func TestFinder(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			f, err := os.Open(tt.file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
 			got, _, err := Finder(f, tt.patterns)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if got, want := got, tt.ok; got != want {
-				fmt.Errorf("got %t want %t", got, want)
+				t.Errorf("got %t want %t", got, want)
 			}
 		})
-		_, err = f.Seek(0, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
 	}
 
 }

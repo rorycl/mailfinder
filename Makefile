@@ -29,7 +29,7 @@ CURDIR := $(shell pwd)
 
 
 test:
-	go test -v -converpkg=./... -coverprofile=coverage.out ./... 
+	go test -v -coverpkg=./... -coverprofile=coverage.out ./... 
 
 coverage-verbose:
 	go tool cover -func coverage.out | tee cover.rpt

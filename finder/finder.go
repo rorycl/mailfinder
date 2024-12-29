@@ -24,7 +24,7 @@ func searchText(content string, searchers []*regexp.Regexp) (bool, error) {
 }
 
 func searchEnrichedText(content string, searchers []*regexp.Regexp) (bool, error) {
-	return searchText(content, searchers)
+	return searchHTML(content, searchers)
 }
 
 func searchHTML(content string, searchers []*regexp.Regexp) (bool, error) {

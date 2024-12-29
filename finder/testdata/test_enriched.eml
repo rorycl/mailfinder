@@ -1,0 +1,69 @@
+From thisexample@gmail.com Sat Dec 28 17:50:20 2024
+Return-path: <thisexample@gmail.com>
+Envelope-to: example@example.net
+Delivery-date: Sat, 28 Dec 2024 17:50:20 +0000
+Received: from mail-oa1-f46.google.com ([209.85.160.46])
+	by example.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <thisexample@gmail.com>)
+	id 1tRax9-00BMTO-1D
+	for example@example.net;
+	Sat, 28 Dec 2024 17:50:20 +0000
+Received: by mail-oa1-f46.google.com with SMTP id 586e51a60fabf-29e842cb9b4so2483636fac.2
+        for <example@example.net>; Sat, 28 Dec 2024 09:50:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1735408218; x=1736013018; darn=example.net;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=G/K4g2uiSnKuSYNYTiqIdmVE5GcVx2dooduSGj6RaoA=;
+        b=X5UsNCD602w9qorS0ZDXGW1VcDjAz2XVqc6HclBuEGHnvK8omqGfyPGbYnPznwW+qR
+         XWdZDz+40yPVn0sjEVKTARLuj/f4JLF1lyjGT4bS6+M4srKvsMWJ0TWS1r+U3g2Aas9L
+         Z4E+amXdJGf7DG7rER8clVRRjx04GQ+xUEuS4+HctP2QwhlphnaGy0ebXQVZCWPop8kF
+         GDhb74jk1SaCLlVLKzm4XZrFpOuOcEGQnTCkOCnIM8HBA40mRNDHzntZnKz341xHZ1CZ
+         sTrK4aGxcmJ/wJMzzXVaGATD/4cfvKMRyMv67iHn1TGluyKfACPEwR5JK0VMnoJBi763
+         +T3Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1735408218; x=1736013018;
+        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=G/K4g2uiSnKuSYNYTiqIdmVE5GcVx2dooduSGj6RaoA=;
+        b=r2ZJD/m2AlQl1x/ZsuGLY9f8N4H/G+Gg2rmHzwSWC8E0DRRcQu0lKCoN3sxyM8QwIw
+         ZhhlEIqNIwfKgNKl7nlhws/fMPzAmp7U0XUeP5xYRF8O1KGtV8yyKKYwJ5Tu/bQ3sPn9
+         9oim2vLYEZRp7zv6BEtrJg1olg208dHSkAXwbilsfqy1FsoHhxb3fmbdtxTHVzKhLAbQ
+         QqqYL7SNCUiwKkgdNVJm5n8sLNtdjWGkAXG+XbrGoRbFN/5trAnlc+e37SwoMcGM7KBV
+         OrikU6tAf4+w4uTdRsJ4BTu+oR6uLVqJ+sNcMZFKJ7jpfyU6WhYafeGeHCwOmHUaYtWS
+         AMtw==
+X-Gm-Message-State: AOJu0Yxa0GIT1bHpUh7z5OqgckeM1F8TS5Yx1cgAaT7vduD3/rNpER+e
+	4yJ0YfUExllAAi21jNbiY/Ke4mJwFr9Im2RAPkx08pv9SMJt+KInrT9kQlO7N+v8lH+1TZFPXgo
+	sXodK4sy8j2ypZkmD1AJM+Z30XFgkOnh/
+X-Gm-Gg: ASbGncvJANoohATFftG8y3BzfUWUSlWB11TmM8Z7MeEDp4idwxC8P6lf3UR11j7tJWn
+	Wr/Uaklol9mRswdekwVuBLTVtFKBGUjLMt1zKYu8=
+X-Google-Smtp-Source: AGHT+IEoufBPnO+Nsr2APPyMotTNbxWsd3OUHq1b8VMTFDYO48KvfV605jzZ3SlUOK9hURo0wLyot22YQ9D9qyMXfDQ=
+X-Received: by 2002:a05:6870:468b:b0:29e:55ae:6170 with SMTP id
+ 586e51a60fabf-2a7fb312f29mr16746290fac.29.1735408216829; Sat, 28 Dec 2024
+ 09:50:16 -0800 (PST)
+MIME-Version: 1.0
+From: Example User <thisexample@gmail.com>
+Date: Sat, 28 Dec 2024 17:50:06 +0000
+Message-ID: <CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com>
+Subject: Test for golang
+To: Example User <example@example.net>
+Content-Type: multipart/alternative; boundary="0000000000004df635062a583636"
+Status: RO
+Content-Length: 552
+Lines: 13
+
+--0000000000004df635062a583636
+Content-Type: message/external-body; access-type=x-mutt-deleted;
+	expiration="Sat, 28 Dec 2024 23:23:07 +0000"; length=117
+
+Content-Type: text/plain; charset="UTF-8"
+
+
+--0000000000004df635062a583636
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr">This is a test for golang.<div><br></div><div>This text has some markup in <b>bold</b> and <i>italic</i>.</div><div><br></div><div><font color="#0000ff">This section of text is in blue.</font></div><div><br></div></div>
+
+--0000000000004df635062a583636--
+
