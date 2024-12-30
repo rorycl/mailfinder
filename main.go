@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"sync"
 
 	"github.com/rorycl/mailfinder/finder"
 	"github.com/rorycl/mailfinder/mail"
@@ -60,35 +61,41 @@ func main() {
 	}
 	defer mbw.Close()
 
+	var wg sync.WaitGroup
+	wg.Add(len(ms))
 	for i, mm := range ms {
-		for {
-			m, r, err := mm.NextReader()
-			if err != nil && err == io.EOF {
-				break
-			}
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+		go func() {
+			defer wg.Done()
+			for {
+				m, r, err := mm.NextReader()
+				if err != nil && err == io.EOF {
+					break
+				}
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
 
-			buf := &bytes.Buffer{}
-			tee := io.TeeReader(r, buf)
+				buf := &bytes.Buffer{}
+				tee := io.TeeReader(r, buf)
 
-			ok, headers, err := finder.Finder(tee, patterns)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			if !ok {
-				continue // hopefully the gc will clean up buf
-			}
-			fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", i, m.Path, m.No)
+				ok, headers, err := finder.Finder(tee, patterns)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				if !ok {
+					continue // hopefully the gc will clean up buf
+				}
+				fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", i, m.Path, m.No)
 
-			err = mbw.Add(headers.From[0].Address, headers.Date, buf)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				err = mbw.Add(headers.From[0].Address, headers.Date, buf)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
 			}
-		}
+		}()
 	}
+	wg.Wait()
 }
