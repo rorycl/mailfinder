@@ -15,7 +15,7 @@ const version string = "0.0.1"
 type Options struct {
 	Maildirs []string `short:"d" long:"maildir" description:"path to one or more maildirs"`
 	Mboxes   []string `short:"b" long:"mbox" description:"path to one or more mboxes"`
-	Regexes  []string `short:"r" long:"regexes" description:"one or more golang regular expressions to search for"`
+	Regexes  []string `short:"r" long:"regexes" description:"one or more golang regular expressions (required)"`
 	regexes  []*regexp.Regexp
 	Args     struct {
 		OutputMbox string `description:"output mbox path (must be unique)"`
@@ -46,15 +46,32 @@ func checkDirExists(path string) bool {
 	return true
 }
 
-// parseOptions parses the command line options
-func parseOptions() (*Options, error) {
+// ParserError indicates a parser error
+type ParserError struct {
+	err error
+}
+
+func (p ParserError) Error() string {
+	return fmt.Sprintf("%v", p.err)
+}
+
+// ParseOptions parses the command line options
+func ParseOptions() (*Options, error) {
 
 	var options Options
 	var parser = flags.NewParser(&options, flags.Default)
-	parser.Usage = version
+	parser.Usage = fmt.Sprintf(`[options] OutputMbox
+
+Find email in mbox and maildirs using golang regular expressions.
+Note that at least one mbox or maildir must be specified, together with
+at least one regular expression.
+
+version %s
+
+e.g. mailfinder -d maildir -b mbox1 -b mbox2 -r "fire.*safety" `, version)
 
 	if _, err := parser.Parse(); err != nil {
-		return nil, err
+		return nil, ParserError{err}
 	}
 	if (len(options.Maildirs) + len(options.Mboxes)) == 0 {
 		return nil, errors.New("no maildirs or mboxes found")

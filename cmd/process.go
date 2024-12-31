@@ -4,26 +4,88 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"regexp"
 
 	"github.com/rorycl/mailfinder/finder"
 	"github.com/rorycl/mailfinder/mail"
 	"github.com/rorycl/mailfinder/maildir"
 	"github.com/rorycl/mailfinder/mbox"
+	"golang.org/x/sync/errgroup"
 )
 
-type ReadNextMail interface {
+// readNextMail is a common interface for mbox, maildir reading
+type readNextMail interface {
 	NextReader() (*mail.Mail, io.Reader, error)
 }
 
-func mailWriter(o *Options) error {
+// workerNum is the number of consumer workers
+var workerNum int = 8
 
+// mailBytesId passes mail data from the reader to the worker
+type mailBytesId struct {
+	m   *mail.Mail
+	buf *bytes.Buffer
+	i   int // this email offset
 }
 
-func process(options *Options) error {
+// testingVerbose allows for some testing output
+var testingVerbose bool = false
 
-	type readNextMail interface {
-		NextReader() (*mail.Mail, io.Reader, error)
+// workers process mail to see if they match the regex patterns provided
+// on the reader chan, and if so write to the mutex protected mailbox
+// writer mbw. The reader buf *bytes.Buffer is used because although
+//
+//	n, r, err := m.NextReader()
+//
+// in process returns an io.Reader, passing it between goroutines means
+// the io.Reader has moved on by the time it is processed. Consequently
+// the io.Reader contents are materialised in the buffer.
+func workers(mbw *mbox.MboxWriter, patterns []*regexp.Regexp, reader <-chan mailBytesId) <-chan error {
+
+	workerErrChan := make(chan error)
+	g := new(errgroup.Group)
+	for w := 0; w < workerNum; w++ {
+		g.Go(func() error {
+			for {
+				select {
+				case mbi, open := <-reader:
+					if !open {
+						return nil
+					}
+					bodyBuf := &bytes.Buffer{}
+					tee := io.TeeReader(mbi.buf, bodyBuf)
+					ok, headers, err := finder.Finder(tee, patterns)
+					if err != nil {
+						return err
+					}
+					if !ok {
+						mbi.buf = &bytes.Buffer{} // zero buf
+						bodyBuf = &bytes.Buffer{} // zero buf
+						return nil
+					}
+					if testingVerbose {
+						fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", mbi.i, mbi.m.Path, mbi.m.No)
+					}
+
+					// mutex protected
+					err = mbw.Add(headers.From[0].Address, headers.Date, bodyBuf)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		})
 	}
+	go func() {
+		workerErrChan <- g.Wait()
+	}()
+	return workerErrChan
+}
+
+// Process processes all mailboxes and maildirs in separate
+// goroutines for each feeding the emails to the workers func over the
+// reader chan.
+func Process(options *Options) error {
 
 	allMboxesAndMailDirs := []readNextMail{}
 	for _, m := range options.Mboxes {
@@ -41,40 +103,51 @@ func process(options *Options) error {
 		allMboxesAndMailDirs = append(allMboxesAndMailDirs, b)
 	}
 
+	// output mbox writer
 	mbw, err := mbox.NewMboxWriter(options.Args.OutputMbox)
 	if err != nil {
 		return err
 	}
 	defer mbw.Close()
 
-	for i, mm := range allMboxesAndMailDirs {
-		for {
-			m, r, err := mm.NextReader()
-			if err != nil && err == io.EOF {
-				break
-			}
-			if err != nil {
-				return err
-			}
+	// reader is a chan for sending emails to workers
+	reader := make(chan mailBytesId)
 
-			buf := &bytes.Buffer{}
-			tee := io.TeeReader(r, buf)
+	// initiate email search/write workers
+	workerErrChan := workers(mbw, options.regexes, reader)
 
-			ok, headers, err := finder.Finder(tee, options.regexes)
-			if err != nil {
-				return err
+	// read each mbox/maildir in a separate goroutine, exiting on first
+	// error.
+	g := new(errgroup.Group)
+	for ii, mm := range allMboxesAndMailDirs {
+		g.Go(func() error {
+			i := ii
+			m := mm
+			for {
+				n, r, err := m.NextReader()
+				if err != nil && err == io.EOF {
+					break
+				}
+				if err != nil {
+					return fmt.Errorf("read next mail error: %w", err)
+				}
+				b := bytes.Buffer{}
+				_, err = b.ReadFrom(r)
+				if err != nil {
+					return fmt.Errorf("buffer error: %w", err)
+				}
+				reader <- mailBytesId{n, &b, i}
 			}
-			if !ok {
-				buf = &bytes.Buffer{}
-				continue // hopefully the gc will clean up buf
-			}
-			fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", i, m.Path, m.No)
-
-			err = mbw.Add(headers.From[0].Address, headers.Date, buf)
-			if err != nil {
-				return err
-			}
-		}
+			return nil
+		})
 	}
-	return nil
+	err = g.Wait()
+	close(reader) // signal completion to workers
+	if err != nil {
+		return err
+	}
+
+	// wait for workers to complete, possibly with error
+	err = <-workerErrChan
+	return err
 }
