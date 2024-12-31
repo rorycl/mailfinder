@@ -6,12 +6,13 @@ import (
 	"io"
 	"os"
 	"regexp"
-	"sync"
 
 	"github.com/rorycl/mailfinder/finder"
 	"github.com/rorycl/mailfinder/mail"
 	"github.com/rorycl/mailfinder/maildir"
 	"github.com/rorycl/mailfinder/mbox"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type ReadNextMail interface {
@@ -24,50 +25,45 @@ type mailBytesId struct {
 	i   int
 }
 
-func workers(mbw *mbox.MboxWriter, patterns []*regexp.Regexp, reader <-chan mailBytesId) <-chan bool {
+func workers(mbw *mbox.MboxWriter, patterns []*regexp.Regexp, reader <-chan mailBytesId) <-chan error {
 
-	done := make(chan bool)
+	workerErrChan := make(chan error)
 
-	var wg sync.WaitGroup
-	wg.Add(8)
+	g := new(errgroup.Group)
 	for w := 0; w < 8; w++ {
-		go func() {
-			defer wg.Done()
+		g.Go(func() error {
 			for {
 				select {
 				case mbi, open := <-reader:
 					if !open {
-						return
+						return nil
 					}
 					ok, headers, err := finder.Finder(mbi.buf, patterns)
 					if err != nil {
-						fmt.Println("finder err", err)
-						os.Exit(1)
+						return err
 					}
 					if !ok {
 						mbi.buf = &bytes.Buffer{} // zero buf
-						return
+						return nil
 					}
 					fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", mbi.i, mbi.m.Path, mbi.m.No)
 
 					// mutex protected
 					err = mbw.Add(headers.From[0].Address, headers.Date, mbi.buf)
 					if err != nil {
-						fmt.Println(err)
-						os.Exit(1)
+						return err
 					}
 				}
 			}
-		}()
+		})
 	}
 	go func() {
-		wg.Wait()
-		done <- true
+		workerErrChan <- g.Wait()
 	}()
-	return done
+	return workerErrChan
 }
 
-func main() {
+func process() error {
 
 	mboxes := []string{"mbox/testdata/golang.mbox", "mbox/testdata/gonuts.mbox"}
 	mdirs := []string{"maildir/testdata/example/"}
@@ -111,33 +107,45 @@ func main() {
 	defer mbw.Close()
 
 	reader := make(chan mailBytesId)
-	done := workers(mbw, patterns, reader)
+	workerErrChan := workers(mbw, patterns, reader)
 
-	var wg sync.WaitGroup
-	wg.Add(len(ms))
-	for i, m := range ms {
-		go func(i int, m ReadNextMail) {
-			defer wg.Done()
+	g := new(errgroup.Group)
+
+	for ii, mm := range ms {
+		g.Go(func() error {
+			i := ii
+			m := mm
 			for {
 				n, r, err := m.NextReader()
 				if err != nil && err == io.EOF {
 					break
 				}
 				if err != nil {
-					fmt.Println("next error", err)
-					os.Exit(1)
+					return fmt.Errorf("next error", err)
 				}
 				b := bytes.Buffer{}
 				_, err = b.ReadFrom(r)
 				if err != nil {
-					fmt.Println("buffer error ", err)
+					return fmt.Errorf("buffer error ", err)
 				}
 				reader <- mailBytesId{n, &b, i}
 			}
-		}(i, m)
+			return nil
+		})
 	}
-	wg.Wait()
+	err = g.Wait()
 	close(reader)
+	if err != nil {
+		return err
+	}
 
-	<-done
+	err = <-workerErrChan
+	return err
+}
+
+func main() {
+
+	err := process()
+	fmt.Println("main", err)
+
 }
