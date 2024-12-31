@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"sync"
 	"time"
 
 	protonMbox "github.com/ProtonMail/go-mbox"
@@ -14,6 +15,7 @@ import (
 // MboxWriter wraps a protonMbox.Writer
 type MboxWriter struct {
 	Writer *protonMbox.Writer
+	sync.Mutex
 }
 
 // NewMboxWriter wraps a proton mbox writer with some file checking
@@ -25,12 +27,14 @@ func NewMboxWriter(path string) (*MboxWriter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &MboxWriter{protonMbox.NewWriter(f)}, nil
+	return &MboxWriter{Writer: protonMbox.NewWriter(f)}, nil
 }
 
 // Add creates an mbox entry with the email From, Date and contents (as
 // an io.Reader). See protonMbox.CreateMessage for more detail.
 func (m *MboxWriter) Add(from string, date time.Time, r io.Reader) error {
+	m.Lock()
+	defer m.Unlock()
 	w, err := m.Writer.CreateMessage(from, date)
 	if err != nil {
 		return fmt.Errorf("mboxwriter create error: %w", err)
