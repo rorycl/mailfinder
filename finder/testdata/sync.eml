@@ -1,0 +1,33 @@
+From examplefrom@gmail.com Wed Jan  1 15:35:22 2025
+Return-path: <examplefrom@gmail.com>
+Envelope-to: exampleto@example.net
+Delivery-date: Wed, 01 Jan 2025 15:35:22 +0000
+Received: from mail-oa1-f47.google.com ([209.85.160.47])
+	by example.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <examplefrom@gmail.com>)
+	id 1tT0kk-00BaQp-2E
+	for exampleto@example.net;
+	Wed, 01 Jan 2025 15:35:22 +0000
+MIME-Version: 1.0
+From: Example <examplefrom@gmail.com>
+Date: Wed, 1 Jan 2025 15:35:09 +0000
+Message-ID: <CAPQX7QQ=drr0k5GH1tk=1ov7bdei6nt5ACfi9jpZPBx1ByHHZg@mail.gmail.com>
+Subject: sync issue
+To: Example <exampleto@example.net>
+CC: ExampleCC <examplecc@example.com>
+Content-Type: multipart/alternative; boundary="00000000000023de9a062aa6cb71"
+Content-Length: 286
+
+--00000000000023de9a062aa6cb71
+Content-Type: text/plain; charset="UTF-8"
+
+This is an email about a *sync* issue.
+
+--00000000000023de9a062aa6cb71
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr">This is an email about a <b>sync</b> issue.</div>
+
+--00000000000023de9a062aa6cb71--
+

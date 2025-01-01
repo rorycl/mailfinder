@@ -1,0 +1,32 @@
+From examplefrom@gmail.com Wed Jan  1 15:34:59 2025
+Return-path: <examplefrom@gmail.com>
+Envelope-to: exampleto@example.net
+Delivery-date: Wed, 01 Jan 2025 15:34:59 +0000
+Received: from mail-oa1-f46.google.com ([209.85.160.46])
+	by example.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <examplefrom@gmail.com>)
+	id 1tT0kM-00BaQc-2x
+	for exampleto@example.net;
+	Wed, 01 Jan 2025 15:34:59 +0000
+MIME-Version: 1.0
+From: Example <examplefrom@gmail.com>
+Date: Wed, 1 Jan 2025 15:34:44 +0000
+Message-ID: <CAPQX7QQBNNpXoE94WyxNPAxK8+dfydeZ9+JPNCV_CKEexvfv=Q@mail.gmail.com>
+Subject: error email
+To: Example To <exampleto@example.net>
+Content-Type: multipart/alternative; boundary="000000000000b3e94f062aa6c9e4"
+Content-Length: 237
+
+--000000000000b3e94f062aa6c9e4
+Content-Type: text/plain; charset="UTF-8"
+
+This is an error
+
+--000000000000b3e94f062aa6c9e4
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr">This is an error</div>
+
+--000000000000b3e94f062aa6c9e4--
+
