@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"slices"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestOptionsFail(t *testing.T) {
@@ -54,6 +57,53 @@ func TestOptionsFail(t *testing.T) {
 				t.Errorf("want err %t for %s", tt.err, tt.desc)
 			}
 			fmt.Println(err)
+		})
+	}
+}
+
+func TestHeaderOptions(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		options *Options
+		results []string
+	}{
+		{
+			name:    "empty",
+			options: &Options{},
+			results: []string{},
+		},
+		{
+			name:    "from",
+			options: &Options{From: true},
+			results: []string{"From"},
+		},
+		{
+			name:    "from and subject",
+			options: &Options{From: true, Subject: true},
+			results: []string{"From", "Subject"},
+		},
+		{
+			name:    "headers",
+			options: &Options{Headers: true},
+			results: []string{"From", "To", "Cc", "Subject"},
+		},
+		{
+			name:    "headers and from",
+			options: &Options{From: true, Headers: true},
+			results: []string{"From", "To", "Cc", "Subject"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("test_%s", tt.name), func(t *testing.T) {
+			aggregateHeader(tt.options)
+			slices.Sort(tt.options.headers)
+			slices.Sort(tt.results)
+			got, want := tt.options.headers, tt.results
+			if !cmp.Equal(got, want) {
+				t.Errorf("header aggregation error %s", cmp.Diff(got, want))
+			}
 		})
 	}
 }
