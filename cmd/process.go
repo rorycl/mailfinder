@@ -46,34 +46,32 @@ func workers(mbw *mbox.MboxWriter, patterns []*regexp.Regexp, reader <-chan mail
 	g := new(errgroup.Group)
 	for w := 0; w < workerNum; w++ {
 		g.Go(func() error {
-			for {
-				select {
-				case mbi, open := <-reader:
-					if !open {
-						return nil
-					}
-					bodyBuf := &bytes.Buffer{}
-					tee := io.TeeReader(mbi.buf, bodyBuf)
-					ok, headers, err := finder.Finder(tee, patterns)
-					if err != nil {
-						return err
-					}
-					if !ok {
-						mbi.buf = &bytes.Buffer{} // zero buf
-						bodyBuf = &bytes.Buffer{} // zero buf
-						return nil
-					}
-					if testingVerbose {
-						fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", mbi.i, mbi.m.Path, mbi.m.No)
-					}
+			for mbi := range reader {
+				bodyBuf := &bytes.Buffer{}
+				tee := io.TeeReader(mbi.buf, bodyBuf)
+				ok, headers, err := finder.Finder(tee, patterns)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					mbi.buf = &bytes.Buffer{} // zero buf
+					// bodyBuf = &bytes.Buffer{} // zero buf
+					continue
+				}
+				if testingVerbose {
+					fmt.Printf("match: mbox/mdir %d : %s (offset %d)\n", mbi.i, mbi.m.Path, mbi.m.No)
+				}
 
-					// mutex protected
-					err = mbw.Add(headers.From[0].Address, headers.Date, bodyBuf)
-					if err != nil {
-						return err
-					}
+				// mutex protected; checks for duplicate messages
+				ok, err = mbw.Add(headers.From[0].Address, headers.Date, string(headers.MessageID), bodyBuf)
+				if testingVerbose && !ok {
+					fmt.Printf("duplicate message %s not written\n", headers.MessageID)
+				}
+				if err != nil {
+					return err
 				}
 			}
+			return nil
 		})
 	}
 	go func() {
@@ -142,10 +140,10 @@ func Process(options *Options) error {
 		})
 	}
 	err = g.Wait()
-	close(reader) // signal completion to workers
 	if err != nil {
 		return err
 	}
+	close(reader) // signal completion to workers
 
 	// wait for workers to complete, possibly with error
 	err = <-workerErrChan
