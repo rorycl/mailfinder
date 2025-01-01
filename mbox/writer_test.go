@@ -9,7 +9,9 @@ import (
 	"time"
 )
 
-func emailCreator(dateString, header string) (time.Time, io.Reader) {
+var id int = 99
+
+func emailCreator(dateString, header string) (time.Time, io.Reader, string) {
 	// taken from https://github.com/ProtonMail/go-mbox/blob/master/writer_test.go
 	emailTpl := `Date: %s
 		
@@ -27,7 +29,9 @@ func emailCreator(dateString, header string) (time.Time, io.Reader) {
 	emailTpl = strings.ReplaceAll(emailTpl, "		", "")
 	email := fmt.Sprintf(emailTpl, date.Format(time.RFC1123Z), header)
 	r := strings.NewReader(email)
-	return date, r
+	id++
+	messageId := fmt.Sprintf("%d", id)
+	return date, r, messageId
 }
 
 func TestMboxWriter(t *testing.T) {
@@ -46,20 +50,30 @@ func TestMboxWriter(t *testing.T) {
 
 	// write a first message to the mbox
 	from := "test1@example.com"
-	date, r := emailCreator("Thu, 01 Jan 2015 01:01:01 +0100", "This is a simple test")
+	date, r, id := emailCreator("Thu, 01 Jan 2015 01:01:01 +0100", "This is a simple test")
 
-	err = m.Add(from, date, r)
-	if err != nil {
-		t.Fatal(err)
+	ok, err := m.Add(from, date, id, r)
+	if err != nil || ok != true {
+		t.Fatal(err, ok)
 	}
 
 	// write a second message to the mbox
 	from = "test2@example.com"
-	date, r = emailCreator("Fri, 02 Jan 2015 02:02:02 +0100", "This is another test")
+	date, r, id = emailCreator("Fri, 02 Jan 2015 02:02:02 +0100", "This is another test")
 
-	err = m.Add(from, date, r)
-	if err != nil {
-		t.Fatal(err)
+	ok, err = m.Add(from, date, id, r)
+	if err != nil || ok != true {
+		t.Fatal(err, ok)
+	}
+
+	// fail to write a third message to the mbox due to duplicate id
+	// (reuse id)
+	from = "test2@example.com"
+	date, r, _ = emailCreator("Fri, 02 Jan 2015 02:02:02 +0100", "This is another test")
+
+	ok, err = m.Add(from, date, id, r)
+	if err != nil || ok != false {
+		t.Fatal(err, ok)
 	}
 
 	err = m.Close()
