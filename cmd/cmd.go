@@ -9,7 +9,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const version string = "0.0.2"
+const version string = "0.0.3"
 
 // Options are flag options
 type Options struct {
@@ -30,16 +30,26 @@ type Options struct {
 
 var cmdTpl string = `[options] OutputMbox
 
-Find email in mbox and maildirs using golang regular expressions. At
-least one mbox or maildir must be specified, together with at least one
-regular expression. Searches can optionally be extended to some header
-fields specified individually or by using the Headers option.
+Find email in mbox and maildirs using one or more golang regular
+expressions. At least one mbox or maildir must be specified. Searches
+can optionally be extended to some header fields specified individually
+or by using the Headers option.
 
 All regular expressions must match.
 
+(See https://yourbasic.org/golang/regexp-cheat-sheet/ for a primer on
+golang's flavour of regular expressions.)
+
+For boolean flags (such as From, To, Headers, etc.) only supply the flag
+to include that item. For example, -s or --subject includes searching of
+the subject lines of emails.
+
+Mbox format files can also be xz, gz or bz2 compressed. Decompression
+should be transparent.
+
 version %s
 
-e.g. mailfinder --headers -d maildir -b mbox1 -b mbox2 -r "fire.*safety" `
+e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" `
 
 // checkFileExists checks if a file exists
 func checkFileExists(path string) bool {
