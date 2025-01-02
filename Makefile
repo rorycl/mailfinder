@@ -38,7 +38,6 @@ coverage-ok:
 	cat cover.rpt | grep "total:" | awk '{print ((int($$3) > ${COVERAGE_AMT}) != 1) }'
 
 cover-report:
-	# this is for the main module only
 	go tool cover -html=coverage.out -o cover.html
 
 clean:
