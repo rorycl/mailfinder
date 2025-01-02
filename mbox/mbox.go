@@ -1,10 +1,13 @@
 package mbox
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
 	"github.com/rorycl/mailfinder/mail"
+	"github.com/rorycl/mailfinder/uncompress"
 
 	mbox "github.com/ProtonMail/go-mbox"
 )
@@ -28,7 +31,17 @@ func NewMbox(path string) (*Mbox, error) {
 	}
 	m.Path = path
 	m.current = -1
-	m.reader = mbox.NewReader(m.file)
+
+	// transparent decompression of bzip2, xz and gzip files
+	u, err := uncompress.NewReader(m.file)
+	if err != nil && errors.Is(err, io.EOF) {
+		return &m, fmt.Errorf("%s is an empty mailbox: %w", path, err)
+	}
+	if err != nil {
+		return &m, fmt.Errorf("uncompress error: %w", err)
+	}
+
+	m.reader = mbox.NewReader(u)
 	return &m, err
 }
 
