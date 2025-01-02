@@ -1,3 +1,7 @@
+// package uncompress tries to determine the file type of a file and
+// provides a reader to return an io.Reader wrapped by an uncompress
+// reader (such as a bzip2, xz or gzip reader) depending on the
+// MIME type determined by the file type check.
 package uncompress
 
 import (
@@ -17,10 +21,14 @@ type uncompress struct {
 	MIME      string
 }
 
-// newUncompress determines the characteristics of a file
+// newUncompress returns a new uncompress type which attempts to
+// determing the file type.
 func newUncompress(f *os.File) (*uncompress, error) {
 	head := make([]byte, 261)
-	f.Read(head)
+	_, err := f.Read(head)
+	if err != nil {
+		return nil, err
+	}
 
 	kind, err := filetype.Match(head)
 	if err != nil {
@@ -34,57 +42,50 @@ func newUncompress(f *os.File) (*uncompress, error) {
 	return u, err
 }
 
-// isBzip determines if a file is a bzip file
-func (u *uncompress) isBzip() bool {
-	return u.MIME == "application/x-bzip2"
-		return true
+// IsType reports if the file type is considered to be one of the
+// supplied types described by typer.
+func (u *uncompress) IsType(typer string) bool {
+	switch typer {
+	case "bzip", "bzip2", "bz2", "application/x-bzip2":
+		return u.MIME == "application/x-bzip2"
+	case "xz", "application/x-xz":
+		return u.MIME == "application/x-xz"
+	case "gzip", "gz":
+		return u.MIME == "application/gzip"
+	case "unknown":
+		return u.MIME == ""
+	default:
+		return false
 	}
-	return false
 }
 
-// isXZ determines if a file is a xz file
-func (u *uncompress) isXZ() bool {
-	if u.MIME == "application/x-xz" {
-		return true
-	}
-	return false
-}
-
-// isGzip determines if a file is a gzipped file
-func (u *uncompress) isGzip() bool {
-	if u.MIME == "application/gzip" {
-		return true
-	}
-	return false
-}
-
-// bzipWrappedReader wraps a reader
-func (u *uncompress) bzipWrappedReader(r io.Reader) io.Reader {
-	return bzip2.NewReader(r)
-}
-
-// xzWrappedReader wraps a reader
-func (u *uncompress) xzWrappedReader(r io.Reader) (io.Reader, error) {
-	return xz.NewReader(r)
-}
-
-// gzipWrappedReader wraps a reader
-func (u *uncompress) gzipWrappedReader(r io.Reader) (io.Reader, error) {
-	return gzip.NewReader(r)
-}
-
+// NewReader opens a file and attempts to determine its file type.
+// Depending on the file type, it will return an io.Reader wrapped by a
+// decompression reader.
+//
+// The decompressions type depends on the determined mime type. Note
+// that the bzip reader returns just:
+//
+//	io.Reader
+//
+// whereas others return:
+//
+//	io.Reader, error
 func NewReader(f *os.File) (io.Reader, error) {
 	u, err := newUncompress(f)
 	if err != nil {
 		return nil, err
 	}
-	var r io.Reader
-	r = io.Reader(f)
-	if u.isBzip() {
-		return u.bzipWrappedReader(f), nil
-	}
-	if u.isXZ() {
-		return u.xzWrappedReader(f)
+
+	r := io.Reader(f)
+
+	switch u.MIME {
+	case "application/x-bzip2":
+		return bzip2.NewReader(r), nil
+	case "application/x-xz":
+		return xz.NewReader(r)
+	case "application/gzip":
+		return gzip.NewReader(r)
 	}
 	return r, nil
 }
