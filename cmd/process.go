@@ -18,7 +18,7 @@ type readNextMail interface {
 	NextReader() (*mail.Mail, io.Reader, error)
 }
 
-// workerNum is the number of consumer workers
+// workerNum is the default number of consumer workers; reset below
 var workerNum int = 8
 
 // mailBytesId passes mail data from the reader to the worker
@@ -99,6 +99,11 @@ func Process(options *Options) error {
 			return fmt.Errorf("register maildir error: %w", err)
 		}
 		allMboxesAndMailDirs = append(allMboxesAndMailDirs, b)
+	}
+
+	// set the number of workers (guarded against testing issues)
+	if options.Workers > 0 {
+		workerNum = options.Workers
 	}
 
 	// output mbox writer

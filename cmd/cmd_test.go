@@ -47,6 +47,21 @@ func TestOptionsFail(t *testing.T) {
 			args: []string{"progname", "-d", "../maildir/testdata/example", "-r", "hi", "output.mbox"},
 			err:  false,
 		},
+		{
+			desc: "not enough workers",
+			args: []string{"progname", "-d", "../maildir/testdata/example", "-w", "0", "-r", "hi", "output.mbox"},
+			err:  true,
+		},
+		{
+			desc: "ok workers",
+			args: []string{"progname", "-d", "../maildir/testdata/example", "-w", "12", "-r", "hi", "output.mbox"},
+			err:  false,
+		},
+		{
+			desc: "too many workers",
+			args: []string{"progname", "-d", "../maildir/testdata/example", "-w", "17", "-r", "hi", "output.mbox"},
+			err:  true,
+		},
 	}
 
 	for _, tt := range tests {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -16,6 +17,7 @@ type Options struct {
 	Maildirs []string         `short:"d" long:"maildir" description:"path to one or more maildirs"`
 	Mboxes   []string         `short:"b" long:"mbox" description:"path to one or more mboxes"`
 	Regexes  []string         `short:"r" long:"regexes" description:"one or more golang regular expressions (required)"`
+	Workers  int              `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
 	From     bool             `short:"f" long:"from" description:"also search email From header"`
 	To       bool             `short:"t" long:"to" description:"also search email To header"`
 	Cc       bool             `short:"c" long:"cc" description:"also search email Cc header"`
@@ -46,6 +48,8 @@ the subject lines of emails.
 
 Mbox format files can also be xz, gz or bz2 compressed. Decompression
 should be transparent.
+
+Emails are de-duplicated by message id.
 
 version %s
 
@@ -146,6 +150,12 @@ func ParseOptions() (*Options, error) {
 			return nil, fmt.Errorf("regular expression %d did not compile: %s", i, err)
 		}
 		options.regexes = append(options.regexes, rr)
+	}
+	if options.Workers < 1 {
+		return nil, errors.New("at least 1 worker is needed to process work")
+	}
+	if got, want := options.Workers, runtime.NumCPU()*4; got > want {
+		return nil, fmt.Errorf("it is inadvisable to have workers of more than four times system cpus (%d)", runtime.NumCPU())
 	}
 	if options.Args.OutputMbox == "" {
 		return nil, errors.New("no output mbox path provided")
