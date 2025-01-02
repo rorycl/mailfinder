@@ -5,9 +5,11 @@ go 1.22.5
 require (
 	github.com/ProtonMail/go-mbox v1.1.0
 	github.com/google/go-cmp v0.6.0
+	github.com/h2non/filetype v1.1.3
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/k3a/html2text v1.2.1
 	github.com/mnako/letters v0.2.3
+	github.com/ulikunitz/xz v0.5.12
 	golang.org/x/sync v0.10.0
 )
 
