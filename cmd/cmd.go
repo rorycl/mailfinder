@@ -10,7 +10,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const version string = "0.0.3"
+const version string = "0.0.4"
 
 // Options are flag options
 type Options struct {
@@ -26,7 +26,7 @@ type Options struct {
 	headers  []string         // rationalised headers to search
 	regexes  []*regexp.Regexp // compiled search terms
 	Args     struct {
-		OutputMbox string `description:"output mbox path (must be unique)"`
+		OutputMbox string `description:"output mbox path (must not already exist)"`
 	} `positional-args:"yes" required:"yes"`
 }
 
@@ -48,6 +48,10 @@ the subject lines of emails.
 
 Mbox format files can also be xz, gz or bz2 compressed. Decompression
 should be transparent.
+
+Each mailbox (mbox or maildir) is searched concurrently and pattern
+matching and writing done by a number of workers, with the number set by
+the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
