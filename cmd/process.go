@@ -21,6 +21,10 @@ type readNextMail interface {
 // workerNum is the default number of consumer workers; reset below
 var workerNum int = 8
 
+// skipParsingErrors allows the worker to continue after email parsing
+// errors
+var skipParsingErrors bool = false
+
 // mailBytesId passes mail data from the reader to the worker
 type mailBytesId struct {
 	m   *mail.Mail
@@ -51,7 +55,14 @@ func workers(mbw *mbox.MboxWriter, patterns []*regexp.Regexp, reader <-chan mail
 				tee := io.TeeReader(mbi.buf, bodyBuf)
 				ok, headers, err := finder.Finder(tee, patterns)
 				if err != nil {
-					return err
+					thisErr := fmt.Errorf("worker error at %s offset %d:\n%w", mbi.m.Path, mbi.m.No, err)
+					if skipParsingErrors {
+						fmt.Println(thisErr)
+						continue
+					}
+					workerErrChan <- thisErr
+					close(workerErrChan)
+					return thisErr
 				}
 				if !ok {
 					mbi.buf = &bytes.Buffer{} // zero buf
@@ -106,6 +117,13 @@ func Process(options *Options) error {
 		workerNum = options.Workers
 	}
 
+	// set whether email reading errors in workers should be skipped
+	if options.skipParsingErrors {
+		skipParsingErrors = true
+	} else {
+		skipParsingErrors = false
+	}
+
 	// output mbox writer
 	mbw, err := mbox.NewMboxWriter(options.Args.OutputMbox)
 	if err != nil {
@@ -119,14 +137,30 @@ func Process(options *Options) error {
 	// initiate email search/write workers
 	workerErrChan := workers(mbw, options.regexes, reader)
 
-	// read each mbox/maildir in a separate goroutine, exiting on first
-	// error.
+	// Read each mbox/maildir in a separate goroutine, exiting on first
+	// error. Errors from workers are signalled on the workerErrChan,
+	// with the first worker error being reported after which the
+	// workerErrChan is closed, causing other produer goroutines to
+	// exit.
 	g := new(errgroup.Group)
 	for ii, mm := range allMboxesAndMailDirs {
 		g.Go(func() error {
 			i := ii
 			m := mm
 			for {
+				// check for error or closed worker chan, exiting in
+				// either case
+				select {
+				case err, ok := <-workerErrChan:
+					if err != nil {
+						return err
+					}
+					if !ok {
+						return nil
+					}
+				default:
+				}
+
 				n, r, err := m.NextReader()
 				if err != nil && err == io.EOF {
 					break
@@ -150,7 +184,8 @@ func Process(options *Options) error {
 	}
 	close(reader) // signal completion to workers
 
-	// wait for workers to complete, possibly with error
+	// wait for workers to complete, possibly with error, if not
+	// completed already
 	err = <-workerErrChan
 	return err
 }
