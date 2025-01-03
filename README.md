@@ -1,10 +1,11 @@
 # mailfinder 
 
-version 0.0.4 : 02 January 2025
+version 0.0.5 : 03 January 2025
 
 A programme to search for emails in mbox or maildir format by (golang)
 regular expressions, saving matched emails to an mbox. Each provided
-mbox or maildir mailbox is searched concurrently.
+mbox or maildir mailbox is searched concurrently. Email parsing errors
+are optionally skipped.
 
 The programme supports searching mbox files compressed with xz, gzip and
 bzip2.
@@ -38,7 +39,7 @@ the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
-version 0.0.4
+version 0.0.5
 
 e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety"  OutputMbox
 
@@ -52,6 +53,7 @@ Application Options:
   -c, --cc          also search email Cc header
   -s, --subject     also search email Subject header
   -h, --headers     search email From, To, Cc and Subject headers
+  -k, --dontskip    don't skip email parsing errors
 
 Help Options:
   -h, --help        Show this help message
