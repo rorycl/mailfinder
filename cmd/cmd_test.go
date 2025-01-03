@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestOptionsFail(t *testing.T) {
+func TestCmdOptions(t *testing.T) {
 
 	tests := []struct {
 		desc string
@@ -74,6 +74,49 @@ func TestOptionsFail(t *testing.T) {
 			fmt.Println(err)
 		})
 	}
+}
+
+func TestOptionsFromMailBoxes(t *testing.T) {
+
+	mBox, err := os.CreateTemp("", "test_options_*.mbox")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(mBox.Name())
+
+	mDir, err := os.MkdirTemp("", "test_options_*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(mDir)
+
+	outMbox, err := os.CreateTemp("", "test_options_*.mbox")
+	if err != nil {
+		t.Fatal(err)
+	}
+	outMboxName := outMbox.Name()
+	_ = os.Remove(outMboxName)
+
+	os.Args = []string{
+		"progname",
+		"-d",
+		mDir,
+		"-b",
+		mBox.Name(),
+		"-r",
+		"(abc|def)",
+		outMboxName,
+	}
+
+	o, err := ParseOptions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(o.regexes), 1; got != want {
+		t.Errorf("number of regexes got %d want %d", got, want)
+	}
+	fmt.Printf("%#v\n", o)
+
 }
 
 func TestHeaderOptions(t *testing.T) {
@@ -164,4 +207,42 @@ func TestOptions(t *testing.T) {
 	}
 	fmt.Printf("%#v\n", o)
 
+}
+
+func TestOptionsSkip(t *testing.T) {
+
+	tests := []struct {
+		desc string
+		args []string
+		err  bool
+		skip bool
+	}{
+
+		{
+			desc: "no skip",
+			args: []string{"progname", "-k", "-d", "../maildir/testdata/example", "-r", "hi", "output.mbox"},
+			err:  false,
+			skip: false,
+		},
+		{
+			desc: "skip",
+			args: []string{"progname", "-d", "../maildir/testdata/example", "-r", "hi", "output.mbox"},
+			err:  false,
+			skip: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
+			os.Args = tt.args
+			options, err := ParseOptions()
+			if got, want := (err != nil), tt.err; got != want {
+				t.Errorf("want err %t for %s", tt.err, tt.desc)
+			}
+			fmt.Println(err)
+			if got, want := options.skipParsingErrors, tt.skip; got != want {
+				t.Errorf("skipParsingErrors got %t want %t", got, want)
+			}
+		})
+	}
 }
