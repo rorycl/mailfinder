@@ -1,7 +1,8 @@
-package finder
+package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -60,10 +61,8 @@ func TestSearchText(t *testing.T) {
 
 		mm := matchRegexpCount{}
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			got, err := searchText(tt.contents, tt.patterns, mm)
-			if err != nil {
-				t.Fatal(err)
-			}
+			f := Finder{searchers: tt.patterns}
+			got := f.searchText(tt.contents, mm)
 			if got, want := got, tt.ok; got != want {
 				t.Errorf("got %t want %t", got, want)
 			}
@@ -97,11 +96,9 @@ func TestSearchHTML(t *testing.T) {
 
 	for i, tt := range tests {
 		mm := matchRegexpCount{}
+		f := Finder{searchers: tt.patterns}
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			got, err := searchHTML(tt.contents, tt.patterns, mm)
-			if err != nil {
-				t.Fatal(err)
-			}
+			got := f.searchHTML(tt.contents, mm)
 			if got, want := got, tt.ok; got != want {
 				t.Errorf("got %t want %t", got, want)
 			}
@@ -175,12 +172,13 @@ func TestSearchHeaders(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer file.Close()
+		f := Finder{searchers: tt.patterns, headerKeys: tt.keys}
 		email, err := letters.ParseEmail(file)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
-			if got, want := len(searchHeaders(email.Headers, tt.patterns, tt.keys...)), tt.num; got != want {
+			if got, want := len(f.searchHeaders(email.Headers)), tt.num; got != want {
 				t.Errorf("got %d matches want %d", got, want)
 			}
 		})
@@ -190,9 +188,9 @@ func TestSearchHeaders(t *testing.T) {
 func TestFinder(t *testing.T) {
 
 	tests := []struct {
-		file     string
-		patterns []*regexp.Regexp
-		ok       bool
+		file             string
+		patterns         []*regexp.Regexp
+		processed, found int
 	}{
 		{
 			file: "testdata/test_txt.eml",
@@ -200,7 +198,8 @@ func TestFinder(t *testing.T) {
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
-			ok: true,
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_html.eml",
@@ -208,7 +207,8 @@ func TestFinder(t *testing.T) {
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
-			ok: true,
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_enriched.eml",
@@ -216,31 +216,50 @@ func TestFinder(t *testing.T) {
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
-			ok: true,
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_txt.eml",
 			patterns: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),
 			},
-			ok: false,
+			processed: 1,
+			found:     0,
 		},
 	}
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			f, err := os.Open(tt.file)
+			mailFile, err := os.Open(tt.file)
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer f.Close()
-			got, _, err := Finder(f, tt.patterns)
+			defer mailFile.Close()
+
+			outFile, err := ioutil.TempFile("", "finder_")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got, want := got, tt.ok; got != want {
-				t.Errorf("got %t want %t", got, want)
+			outFileName := outFile.Name()
+			_ = os.Remove(outFileName)
+
+			f, err := NewFinder(outFileName, tt.patterns)
+			if err != nil {
+				t.Fatal(err)
 			}
+			err = f.Operate(mailFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := f.processed, tt.processed; got != want {
+				t.Errorf("processed got %d want %d", got, want)
+			}
+			if got, want := f.found, tt.found; got != want {
+				t.Errorf("found got %d want %d", got, want)
+			}
+			_ = os.Remove(outFileName)
 		})
 	}
 
@@ -249,10 +268,10 @@ func TestFinder(t *testing.T) {
 func TestHeaderAndBodyFinder(t *testing.T) {
 
 	tests := []struct {
-		file     string
-		patterns []*regexp.Regexp
-		keys     []string
-		ok       bool
+		file             string
+		patterns         []*regexp.Regexp
+		keys             []string
+		processed, found int
 	}{
 		{
 			file: "testdata/test_txt.eml",
@@ -261,8 +280,9 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("thisexample.*gmail.com"),
 			},
-			keys: []string{"To", "From", "Subject"},
-			ok:   true,
+			keys:      []string{"To", "From", "Subject"},
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_txt.eml",
@@ -271,8 +291,9 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("can't match this"),
 			},
-			keys: []string{"To", "From", "Subject"},
-			ok:   false,
+			keys:      []string{"To", "From", "Subject"},
+			processed: 1,
+			found:     0,
 		},
 		{
 			file: "testdata/test_html.eml",
@@ -281,8 +302,9 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("(?i)example user"),
 			},
-			keys: []string{"To"},
-			ok:   true,
+			keys:      []string{"To"},
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_html.eml",
@@ -291,8 +313,9 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("(?i)test.*golang"),
 			},
-			keys: []string{"Subject"},
-			ok:   true,
+			keys:      []string{"Subject"},
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_html.eml",
@@ -301,8 +324,9 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("not an example"),
 			},
-			keys: []string{"To"},
-			ok:   false,
+			keys:      []string{"To"},
+			processed: 1,
+			found:     0,
 		},
 		{
 			file: "testdata/test_enriched.eml",
@@ -310,34 +334,52 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
-			keys: []string{},
-			ok:   true,
+			keys:      []string{},
+			processed: 1,
+			found:     1,
 		},
 		{
 			file: "testdata/test_txt.eml",
 			patterns: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),
 			},
-			keys: []string{},
-			ok:   false,
+			keys:      []string{},
+			processed: 1,
+			found:     0,
 		},
 	}
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			f, err := os.Open(tt.file)
+			mailFile, err := os.Open(tt.file)
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer f.Close()
-			got, _, err := Finder(f, tt.patterns, tt.keys...)
+			defer mailFile.Close()
+
+			outFile, err := ioutil.TempFile("", "finder_")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got, want := got, tt.ok; got != want {
-				t.Errorf("got %t want %t", got, want)
+			outFileName := outFile.Name()
+			_ = os.Remove(outFileName)
+
+			f, err := NewFinder(outFileName, tt.patterns, tt.keys...)
+			if err != nil {
+				t.Fatal(err)
 			}
+			err = f.Operate(mailFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := f.processed, tt.processed; got != want {
+				t.Errorf("processed got %d want %d", got, want)
+			}
+			if got, want := f.found, tt.found; got != want {
+				t.Errorf("found got %d want %d", got, want)
+			}
+			_ = os.Remove(outFileName)
 		})
 	}
-
 }

@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/rorycl/mailboxoperator v0.0.3 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
