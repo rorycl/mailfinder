@@ -104,12 +104,13 @@ func (f *Finder) searchHeaders(headers letters.Headers) matchRegexpCount {
 
 // Finder is a struct with settings for performing mail finding
 type Finder struct {
-	searchers  []*regexp.Regexp
-	headerKeys []string
-	mboxWriter *mbox.MboxWriter
-	processed  int
-	found      int
-	foundMutex sync.Mutex
+	searchers         []*regexp.Regexp
+	headerKeys        []string
+	mboxWriter        *mbox.MboxWriter
+	skipParsingErrors bool
+	processed         int
+	found             int
+	foundMutex        sync.Mutex
 }
 
 // addFound records processing numbers
@@ -153,7 +154,10 @@ func (f *Finder) Operate(r io.Reader) error {
 
 	email, err := letters.ParseEmail(tee)
 	if err != nil {
-		return err
+		if !f.skipParsingErrors {
+			return err
+		}
+		fmt.Println(err)
 	}
 
 	// search headers

@@ -32,6 +32,7 @@ func main() {
 		exit(1)
 		return
 	}
+	finder.skipParsingErrors = options.skipParsingErrors
 
 	// initialise mailbox operator
 	mo, err := mbo.NewMailboxOperator(options.Mboxes, options.Maildirs, finder)
