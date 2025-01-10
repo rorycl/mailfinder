@@ -1,0 +1,50 @@
+From: example@clark.net (Rip Loomis)
+Date: Wed, 1 Mar 2000 14:33:17 -0500 (EST)
+Subject: Post-compile RSA error with 1.2.2, Solaris 7, OpenSSL 0.9.5
+Message-ID: <Pine.GSO.4.05.10003011417440.7189-100000@shell.clark.net>
+Content-Length: 1738
+Lines: 43
+
+I've been happily using the pre-packaged OpenSSH on my Debian systems
+for several weeks.  Yesterday I finally started the process of getting
+OpenSSH up and running on all our Solaris boxes, to replace the
+existing (patched) 1.2.27 non-free version.  (Our in-house patches to
+1.2.27 include generation of kernel-level audit data for both IRIX and
+Solaris, and I want to port/contribute that code to OpenSSH).
+
+What I did:
+1.  Installed a new fresh Solaris 7 box with all current Sun
+    recommended patches.
+2.  Downloaded and installed the precompiled GCC 2.95.2 and perl 5.005.03
+    from sunfreeware.com
+3.  Downloaded source code for the following, compiled and installed
+    with no problems:
+    - OpenSSL 0.9.5
+    - zlib 1.1.3
+    - egd 0.6
+4.  Downloaded OpenSSH 1.2.2 tarball, compiled and installed.  Some
+    warnings, but nothing appeared significant.
+
+Up to this point, everything looks fine.  If I run ssh with no arguments,
+then I get the expected usage error message.
+
+If I try to ssh to a host that is running SSH, or I try to start the local
+sshd, I get (with the appropriate program name in place of $0):
+$0: no RSA support in libssl and libcrypto -- exiting.  See ssl(8)
+
+I've looked through the archives and glanced at the source, but nothing
+jumps out as the obvious cause.  Other folks seem to have OpenSSH up
+on Solaris 7 already--so does anyone have any hints as I start trying to
+RTFM and RTFS?
+
+Note:  After my first attempt blew up, I also tried (as an alternate
+method) downloading, compiling, installing, and linking against RSAREF2.
+That apparently worked okay, but the end result was the same.  Any chance
+that SSH found the correct libraries at compile time, but can't find them
+at runtime?
+  
+	--Rip
+
+
+
+

@@ -122,6 +122,11 @@ func (f *Finder) addFound(b bool) {
 	}
 }
 
+// Summary prints a summary of the found emails
+func (f *Finder) Summary() string {
+	return fmt.Sprintf("processed %d found %d emails", f.processed, f.found)
+}
+
 // NewFinder creates a new Finder.
 func NewFinder(outputMbox string, searchers []*regexp.Regexp, headerKeys ...string) (*Finder, error) {
 	if searchers == nil {

@@ -69,4 +69,4 @@ module-update-tidy:
 	go mod tidy
 
 build:
-	go build -o mailfinder cmd/main/main.go
+	go build .

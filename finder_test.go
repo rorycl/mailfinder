@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -237,7 +236,7 @@ func TestFinder(t *testing.T) {
 			}
 			defer mailFile.Close()
 
-			outFile, err := ioutil.TempFile("", "finder_")
+			outFile, err := os.CreateTemp("", "finder_")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -357,7 +356,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			}
 			defer mailFile.Close()
 
-			outFile, err := ioutil.TempFile("", "finder_")
+			outFile, err := os.CreateTemp("", "finder_")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -381,5 +380,60 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			}
 			_ = os.Remove(outFileName)
 		})
+	}
+}
+
+func TestSummary(t *testing.T) {
+	tests := []struct {
+		file             string
+		processed, found int // for info in this case
+	}{
+		{
+			file:      "testdata/test_txt.eml",
+			processed: 1,
+			found:     1,
+		},
+		{
+			file:      "./testdata/error.eml",
+			processed: 1,
+			found:     0,
+		},
+	}
+	outFile, err := os.CreateTemp("", "finder_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	outFileName := outFile.Name()
+	_ = os.Remove(outFileName)
+
+	patterns := []*regexp.Regexp{
+		regexp.MustCompile("example"),
+		regexp.MustCompile("(?i)this section"),
+	}
+	keys := []string{"To"}
+
+	f, err := NewFinder(outFileName, patterns, keys...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(outFileName)
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			mailFile, err := os.Open(tt.file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer mailFile.Close()
+
+			err = f.Operate(mailFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+		})
+	}
+	if got, want := f.Summary(), "processed 2 found 1 emails"; got != want {
+		t.Errorf("got\n%s\nwant\n%s", got, want)
 	}
 }

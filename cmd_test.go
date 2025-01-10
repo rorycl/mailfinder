@@ -34,32 +34,32 @@ func TestCmdOptions(t *testing.T) {
 		},
 		{
 			desc: "missing regex",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "output.mbox"},
 			err:  true,
 		},
 		{
 			desc: "missing output mbox",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "-r", "hi"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-r", "hi"},
 			err:  true,
 		},
 		{
 			desc: "ok",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-r", "hi", "output.mbox"},
 			err:  false,
 		},
 		{
 			desc: "not enough workers",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "-w", "0", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "0", "-r", "hi", "output.mbox"},
 			err:  true,
 		},
 		{
 			desc: "ok workers",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "-w", "12", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "12", "-r", "hi", "output.mbox"},
 			err:  false,
 		},
 		{
 			desc: "too many workers",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "-w", "17", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "17", "-r", "hi", "output.mbox"},
 			err:  true,
 		},
 	}
@@ -220,13 +220,13 @@ func TestOptionsSkip(t *testing.T) {
 
 		{
 			desc: "no skip",
-			args: []string{"progname", "-k", "-d", "../maildir/testdata/example", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-k", "-d", "testdata/maildir/example", "-r", "hi", "output.mbox"},
 			err:  false,
 			skip: false,
 		},
 		{
 			desc: "skip",
-			args: []string{"progname", "-d", "../maildir/testdata/example", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-r", "hi", "output.mbox"},
 			err:  false,
 			skip: true,
 		},

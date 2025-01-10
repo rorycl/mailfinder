@@ -1,0 +1,18 @@
+From: example@yarene.elektra.ru (=?koi8-r?B?6M/Sxdcg88XSx8XKIO7Jy8/MwcXXyd4=?=)
+Date: Thu, 2 Mar 2000 11:34:58 +0300
+Subject: Is it securely: `hostname`:10 ?
+Message-ID: <20000302113458.A8018@yarene.elektra.ru>
+Content-Length: 232
+Lines: 11
+
+Hello,
+I am using OpenSSH 1.2.1 on Solaris 2.6.
+I am using X forwarding intensively. During work OpenSSH creates
+display like `hostname`:10. Is it securely?? Why not 127.0.0.1:10 or 
+localhost:10 ?
+
+	Best regards
+	Example Elektra.
+
+
+
