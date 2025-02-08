@@ -6,7 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/mnako/letters"
+	"github.com/rorycl/letters"
+	"github.com/rorycl/letters/parser"
 )
 
 func TestSearchText(t *testing.T) {
@@ -172,12 +173,15 @@ func TestSearchHeaders(t *testing.T) {
 		}
 		defer file.Close()
 		f := Finder{searchers: tt.patterns, headerKeys: tt.keys}
-		email, err := letters.ParseEmail(file)
+		opt := parser.WithHeadersOnly()
+
+		p := letters.NewParser(opt, parser.WithoutAttachments())
+		parsedEmail, err := p.Parse(file)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
-			if got, want := len(f.searchHeaders(email.Headers)), tt.num; got != want {
+			if got, want := len(f.searchHeaders(parsedEmail.Headers)), tt.num; got != want {
 				t.Errorf("got %d matches want %d", got, want)
 			}
 		})

@@ -10,7 +10,9 @@ import (
 	"sync"
 
 	"github.com/k3a/html2text"
-	"github.com/mnako/letters"
+	"github.com/rorycl/letters"
+	"github.com/rorycl/letters/email"
+	"github.com/rorycl/letters/parser"
 	"github.com/rorycl/mailboxoperator/mbox"
 )
 
@@ -46,7 +48,7 @@ func (f *Finder) searchHTML(content string, matchMap matchRegexpCount) bool {
 
 // searchHeaders counts matches against searchers amongst the supplied
 // header strings to search
-func (f *Finder) searchHeaders(headers letters.Headers) matchRegexpCount {
+func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
 	matchMap := matchRegexpCount{}
 	if len(f.headerKeys) == 0 {
 		return matchMap
@@ -150,9 +152,10 @@ func NewFinder(outputMbox string, searchers []*regexp.Regexp, headerKeys ...stri
 func (f *Finder) Operate(r io.Reader) error {
 
 	buf := &bytes.Buffer{}
-	tee := io.TeeReader(r, buf)
+	// tee := io.TeeReader(r, buf)
 
-	email, err := letters.ParseEmail(tee)
+	emailParser := letters.NewParser(parser.WithoutAttachments())
+	email, err := emailParser.Parse(r)
 	if err != nil {
 		if !f.skipParsingErrors {
 			return err
