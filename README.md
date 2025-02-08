@@ -1,6 +1,8 @@
 # mailfinder 
 
-version 0.0.6 : 10 January 2025
+version 0.0.7 : 08 February 2025
+*update to use github.com/rorycl/letters, which offers speed
+improvements*
 
 A programme to search for emails in mbox or maildir format by (golang)
 regular expressions, saving matched emails to an mbox. Each provided
@@ -38,7 +40,7 @@ the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
-version 0.0.6
+version 0.0.7
 
 e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety"  OutputMbox
 

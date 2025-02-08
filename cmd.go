@@ -10,7 +10,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const version string = "0.0.6"
+const version string = "0.0.7"
 
 // Options are flag options
 type Options struct {
