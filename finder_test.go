@@ -223,6 +223,14 @@ func TestFinder(t *testing.T) {
 			found:     1,
 		},
 		{
+			file: "testdata/test_enriched.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("(?i)this section"),
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
 			file: "testdata/test_txt.eml",
 			patterns: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),

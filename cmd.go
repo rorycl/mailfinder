@@ -22,7 +22,7 @@ type Options struct {
 	To       bool     `short:"t" long:"to" description:"also search email To header"`
 	Cc       bool     `short:"c" long:"cc" description:"also search email Cc header"`
 	Subject  bool     `short:"s" long:"subject" description:"also search email Subject header"`
-	Headers  bool     `short:"h" long:"headers" description:"search email From, To, Cc and Subject headers"`
+	Headers  bool     `short:"a" long:"headers" description:"search email From, To, Cc and Subject headers"`
 	DontSkip bool     `short:"k" long:"dontskip" description:"don't skip email parsing errors"`
 
 	headers           []string         // rationalised headers to search

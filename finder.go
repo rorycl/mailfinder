@@ -32,7 +32,7 @@ func (f *Finder) searchText(content string, matchMap matchRegexpCount) bool {
 			}
 		}
 	}
-	return (len(matchMap) == len(f.searchers))
+	return len(matchMap) == len(f.searchers)
 }
 
 // searchEnrichedText redirects to searchHTML
@@ -63,7 +63,6 @@ func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
 				if _, ok := matchMap[s]; ok {
 					continue
 				}
-				fmt.Println(a.Name, a.Address, s)
 				if s.MatchString(a.Name) || s.MatchString(a.Address) {
 					matchMap[s]++
 				}
@@ -152,28 +151,30 @@ func NewFinder(outputMbox string, searchers []*regexp.Regexp, headerKeys ...stri
 func (f *Finder) Operate(r io.Reader) error {
 
 	buf := &bytes.Buffer{}
-	// tee := io.TeeReader(r, buf)
+	tee := io.TeeReader(r, buf)
 
 	emailParser := letters.NewParser(parser.WithoutAttachments())
-	email, err := emailParser.Parse(r)
+	email, err := emailParser.Parse(tee)
 	if err != nil {
 		if !f.skipParsingErrors {
 			return err
 		}
 		fmt.Println(err)
+		return nil
 	}
 
 	// search headers
 	matchMap := f.searchHeaders(email.Headers)
 
 	// search content
-	var ok bool = true
-	switch {
-	case email.Text != "":
+	var ok bool = false
+	if email.Text != "" {
 		ok = f.searchText(email.Text, matchMap)
-	case email.EnrichedText != "":
+	}
+	if email.EnrichedText != "" {
 		ok = f.searchEnrichedText(email.EnrichedText, matchMap)
-	case email.HTML != "":
+	}
+	if email.HTML != "" {
 		ok = f.searchEnrichedText(email.HTML, matchMap)
 	}
 	if !ok {
