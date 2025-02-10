@@ -238,6 +238,57 @@ func TestFinder(t *testing.T) {
 			processed: 1,
 			found:     0,
 		},
+		{
+			file: "testdata/test_multipart.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("1:body:A"), // body text
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			file: "testdata/test_multipart.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("<div dir="), // body html in markup
+			},
+			processed: 1,
+			found:     0, // fail
+		},
+		{
+			file: "testdata/test_multipart.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("2:body:B"), // body html after stripping
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			file: "testdata/test_multipart.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("1.txt:C"), // text/plain attachment, base64 encoded
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			file: "testdata/test_multipart.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			file: "testdata/test_multipart.eml",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("1:body:A"), // body text
+				regexp.MustCompile("2:body:B"), // body html after stripping
+				regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
+				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+			},
+			processed: 1,
+			found:     1,
+		},
 	}
 
 	for i, tt := range tests {

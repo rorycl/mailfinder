@@ -1,0 +1,54 @@
+From blackbirdw@example Mon Feb 10 21:06:48 2025
+Return-path: <blackbirdw@example>
+Envelope-to: otter@earthsea.net
+Delivery-date: Mon, 10 Feb 2025 21:06:48 +0000
+Received: from mail-oa1-f44.google.com ([209.85.160.44])
+	by earthsea.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.96)
+	(envelope-from <blackbirdw@example>)
+	id 1thazQ-00EEE8-0f
+	for otter@earthsea.net;
+	Mon, 10 Feb 2025 21:06:48 +0000
+Received: by mail-oa1-f44.google.com with SMTP id 586e51a60fabf-2b863fdc25aso649508fac.2
+        for <otter@earthsea.net>; Mon, 10 Feb 2025 13:06:48 -0800 (PST)
+MIME-Version: 1.0
+From: Yror Egnal <blackbirdw@example>
+Date: Mon, 10 Feb 2025 21:06:33 +0000
+X-Gm-Features: AWEUYZnfhUAapzWiZij88TswyYNaEJ7aJPHqaVV-m2TJLolwV7rxq4X78y3Lf4Y
+Message-ID: <CAPQX7QRimj2tcsPTTUsw9B+=kUZYZWGfKDTDF2xpxtJZov0fuA@mail.example>
+Subject: multipart test
+To: Otter <otter@earthsea.net>
+Content-Type: multipart/mixed; boundary="0000000000000c7ac8062dd016d9"
+Status: RO
+Content-Length: 667
+
+--0000000000000c7ac8062dd016d9
+Content-Type: text/plain; charset="UTF-8"
+
+A multipart test.
+
+1:body:A
+
+--0000000000000c7ac8062dd016d9
+Content-Type: text/html; charset="UTF-8"
+
+<div dir="ltr"><b>A multipart test.</b><div><br></div><div>2:body:<b>B</b></div></div>
+
+--0000000000000c7ac8062dd016d9
+Content-Type: text/plain; charset="US-ASCII"; name="1.txt"
+Content-Disposition: attachment; filename="1.txt"
+Content-Transfer-Encoding: base64
+Content-ID: <f_m6zjlw2i0>
+X-Attachment-Id: f_m6zjlw2i0
+
+MS50eHQ6Qwo=
+--0000000000000c7ac8062dd016d9
+Content-Type: text/html; charset="US-ASCII"; name="2.html"
+Content-Disposition: attachment; filename="2.html"
+Content-Transfer-Encoding: base64
+Content-ID: <f_m6zjlw361>
+X-Attachment-Id: f_m6zjlw361
+
+PGh0bWw+PGJvZHk+PGI+Mi5odG1sOkQ8L2I+PC9ib2R5PjwvaHRtbD4K
+--0000000000000c7ac8062dd016d9--
+

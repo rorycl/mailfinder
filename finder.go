@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/mail"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/k3a/html2text"
@@ -153,7 +154,21 @@ func (f *Finder) Operate(r io.Reader) error {
 	buf := &bytes.Buffer{}
 	tee := io.TeeReader(r, buf)
 
-	emailParser := letters.NewParser(parser.WithoutAttachments())
+	// only consider attachments with a "text" content disposition
+	onlyProcessTextAttachments := func(fe *email.File) error {
+		if !strings.HasPrefix(fe.ContentInfo.Type, "text/") {
+			return nil
+		}
+		var err error
+		fe.Data, err = io.ReadAll(fe.Reader)
+		return err
+	}
+
+	emailParser := letters.NewParser(
+		parser.WithCustomFileFunc(
+			onlyProcessTextAttachments,
+		),
+	)
 	email, err := emailParser.Parse(tee)
 	if err != nil {
 		if !f.skipParsingErrors {
@@ -171,11 +186,23 @@ func (f *Finder) Operate(r io.Reader) error {
 	if email.Text != "" {
 		ok = f.searchText(email.Text, matchMap)
 	}
-	if email.EnrichedText != "" {
+	if email.EnrichedText != "" && !ok {
 		ok = f.searchEnrichedText(email.EnrichedText, matchMap)
 	}
-	if email.HTML != "" {
-		ok = f.searchEnrichedText(email.HTML, matchMap)
+	if email.HTML != "" && !ok {
+		ok = f.searchHTML(email.HTML, matchMap)
+	}
+	if len(email.Files) > 0 && !ok {
+		for _, fi := range email.Files {
+			switch fi.ContentInfo.Type {
+			case "text/plain":
+				ok = f.searchText(string(fi.Data), matchMap)
+			case "text/enriched":
+				ok = f.searchEnrichedText(string(fi.Data), matchMap)
+			case "text/html":
+				ok = f.searchHTML(string(fi.Data), matchMap)
+			}
+		}
 	}
 	if !ok {
 		f.addFound(false)
