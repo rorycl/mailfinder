@@ -1,8 +1,12 @@
-# mailfinder 
+# mailfinder
+Search emails in mbox or maildir directories.
 
-version 0.0.7 : 08 February 2025
-*update to use github.com/rorycl/letters, which offers speed
-improvements*
+version 0.0.8 : 10 February 2025
+
+Update to use
+[github.com/rorycl/letters](https://github.com/rorycl/letters), which
+offers speed improvements, and to search text* content-type inline and
+attached files.
 
 A programme to search for emails in mbox or maildir format by (golang)
 regular expressions, saving matched emails to an mbox. Each provided
@@ -53,7 +57,7 @@ Application Options:
   -t, --to          also search email To header
   -c, --cc          also search email Cc header
   -s, --subject     also search email Subject header
-  -h, --headers     search email From, To, Cc and Subject headers
+  -a, --headers     search email From, To, Cc and Subject headers
   -k, --dontskip    don't skip email parsing errors
 
 Help Options:
