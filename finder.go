@@ -61,7 +61,7 @@ func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
 				if len(f.searchers) == len(matchMap) {
 					return
 				}
-				if _, ok := matchMap[s]; ok {
+				if _, ok := matchMap[s]; ok { // continue if already a match
 					continue
 				}
 				if s.MatchString(a.Name) || s.MatchString(a.Address) {
@@ -76,7 +76,7 @@ func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
 			if len(f.searchers) == len(matchMap) {
 				return
 			}
-			if _, ok := matchMap[s]; ok {
+			if _, ok := matchMap[s]; ok { // continue if already a match
 				continue
 			}
 			if s.MatchString(str) {

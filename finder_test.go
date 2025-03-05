@@ -76,6 +76,7 @@ func TestSearchHTML(t *testing.T) {
 		contents string
 		patterns []*regexp.Regexp
 		ok       bool
+		useFunc  func(f *Finder, content string, matchMap matchRegexpCount) bool
 	}{
 		{
 			contents: "<h1>hello</h1><p>there</p>",
@@ -83,22 +84,33 @@ func TestSearchHTML(t *testing.T) {
 				regexp.MustCompile("hello"),
 				regexp.MustCompile("there"),
 			},
-			ok: true,
+			ok:      true,
+			useFunc: (*Finder).searchHTML,
 		},
 		{
 			contents: "<h1>hello</h1><p>there</p>",
 			patterns: []*regexp.Regexp{
 				regexp.MustCompile("h1"),
 			},
-			ok: false,
+			ok:      false,
+			useFunc: (*Finder).searchHTML,
+		},
+		{
+			contents: "<h1>hello</h1><p>there</p>",
+			patterns: []*regexp.Regexp{
+				regexp.MustCompile("hello"),
+				regexp.MustCompile("there"),
+			},
+			ok:      true,
+			useFunc: (*Finder).searchEnrichedText,
 		},
 	}
 
 	for i, tt := range tests {
 		mm := matchRegexpCount{}
-		f := Finder{searchers: tt.patterns}
+		f := &Finder{searchers: tt.patterns}
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			got := f.searchHTML(tt.contents, mm)
+			got := tt.useFunc(f, tt.contents, mm)
 			if got, want := got, tt.ok; got != want {
 				t.Errorf("got %t want %t", got, want)
 			}
