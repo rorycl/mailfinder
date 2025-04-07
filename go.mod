@@ -15,8 +15,8 @@ require (
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/rorycl/base64toraw v0.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
-	golang.org/x/net v0.37.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 )
