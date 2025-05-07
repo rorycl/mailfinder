@@ -1,7 +1,7 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.8 : 10 February 2025
+version 0.0.8 : 07 May 2025 : include searching by messageid
 
 Update to use
 [github.com/rorycl/letters](https://github.com/rorycl/letters), which
@@ -21,10 +21,11 @@ mbox files compressed with xz, gzip and bzip2 is supported.
 Usage:
   mailfinder [options] OutputMbox
 
-Find email in mbox and maildirs using one or more golang regular
-expressions. At least one mbox or maildir must be specified. Searches
-can optionally be extended to some header fields specified individually
-or by using the Headers option.
+Find email by searching the text, enriched text and html bodies and
+attachments of email held in mbox and maildirs mail stores using one or
+more golang regular expressions. At least one mbox or maildir must be
+specified. Searches can optionally be extended to some header fields
+specified individually or by using the Headers option.
 
 All regular expressions must match.
 
@@ -44,7 +45,7 @@ the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
-version 0.0.7
+version 0.0.8
 
 e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety"  OutputMbox
 
@@ -57,7 +58,8 @@ Application Options:
   -t, --to          also search email To header
   -c, --cc          also search email Cc header
   -s, --subject     also search email Subject header
-  -a, --headers     search email From, To, Cc and Subject headers
+  -i, --messageid   also search messageid header
+  -a, --headers     search email From, To, Cc, Subject and MessageID headers
   -k, --dontskip    don't skip email parsing errors
 
 Help Options:
