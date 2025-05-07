@@ -160,7 +160,7 @@ func TestHeaderOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("test_%s", tt.name), func(t *testing.T) {
-			aggregateHeader(tt.options)
+			tt.options.aggregateHeaders()
 			slices.Sort(tt.options.headers)
 			slices.Sort(tt.results)
 			got, want := tt.options.headers, tt.results

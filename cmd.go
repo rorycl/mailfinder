@@ -35,6 +35,40 @@ type Options struct {
 	} `positional-args:"yes" required:"yes"`
 }
 
+// aggregateHeaders aggregates header options into options.headers
+func (o *Options) aggregateHeaders() {
+	a := map[string]bool{}
+	if o.From {
+		a["From"] = true
+	}
+	if o.To {
+		a["To"] = true
+	}
+	if o.Cc {
+		a["Cc"] = true
+	}
+	if o.Subject {
+		a["Subject"] = true
+	}
+	if o.MessageID {
+		a["MessageID"] = true
+	}
+	if o.Headers {
+		a = map[string]bool{
+			"From":      true,
+			"To":        true,
+			"Cc":        true,
+			"Subject":   true,
+			"MessageID": true,
+		}
+	}
+	v := []string{}
+	for k := range a {
+		v = append(v, k)
+	}
+	o.headers = v
+}
+
 var cmdTpl string = `[options] OutputMbox
 
 Find email in mbox and maildirs using one or more golang regular
@@ -97,40 +131,6 @@ func (p ParserError) Error() string {
 	return fmt.Sprintf("%v", p.err)
 }
 
-// aggregateHeaders aggregates header options into options.headers
-func aggregateHeader(options *Options) {
-	a := map[string]bool{}
-	if options.From {
-		a["From"] = true
-	}
-	if options.To {
-		a["To"] = true
-	}
-	if options.Cc {
-		a["Cc"] = true
-	}
-	if options.Subject {
-		a["Subject"] = true
-	}
-	if options.MessageID {
-		a["MessageID"] = true
-	}
-	if options.Headers {
-		a = map[string]bool{
-			"From":      true,
-			"To":        true,
-			"Cc":        true,
-			"Subject":   true,
-			"MessageID": true,
-		}
-	}
-	v := []string{}
-	for k := range a {
-		v = append(v, k)
-	}
-	options.headers = v
-}
-
 // ParseOptions parses the command line options
 func ParseOptions() (*Options, error) {
 
@@ -177,5 +177,9 @@ func ParseOptions() (*Options, error) {
 	if checkFileExists(options.Args.OutputMbox) {
 		return nil, fmt.Errorf("output mbox %s already exists", options.Args.OutputMbox)
 	}
+
+	// aggregate the headers
+	options.aggregateHeaders()
+
 	return &options, nil
 }
