@@ -99,6 +99,8 @@ func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
 			findFromAddresses(headers.Cc...)
 		case "Subject":
 			findFromString(headers.Subject)
+		case "MessageID":
+			findFromString(headers.MessageID)
 		}
 	}
 	return matchMap

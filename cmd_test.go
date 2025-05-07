@@ -142,14 +142,19 @@ func TestHeaderOptions(t *testing.T) {
 			results: []string{"From", "Subject"},
 		},
 		{
+			name:    "from, subject and messageID",
+			options: &Options{From: true, Subject: true, MessageID: true},
+			results: []string{"From", "Subject", "MessageID"},
+		},
+		{
 			name:    "headers",
 			options: &Options{Headers: true},
-			results: []string{"From", "To", "Cc", "Subject"},
+			results: []string{"From", "To", "Cc", "Subject", "MessageID"},
 		},
 		{
 			name:    "headers and from",
 			options: &Options{From: true, Headers: true},
-			results: []string{"From", "To", "Cc", "Subject"},
+			results: []string{"From", "To", "Cc", "Subject", "MessageID"},
 		},
 	}
 

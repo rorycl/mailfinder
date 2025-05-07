@@ -14,21 +14,23 @@ const version string = "0.0.7"
 
 // Options are flag options
 type Options struct {
-	Maildirs []string `short:"d" long:"maildir" description:"path to one or more maildirs"`
-	Mboxes   []string `short:"b" long:"mbox" description:"path to one or more mboxes"`
-	Regexes  []string `short:"r" long:"regexes" description:"one or more golang regular expressions (required)"`
-	Workers  int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
-	From     bool     `short:"f" long:"from" description:"also search email From header"`
-	To       bool     `short:"t" long:"to" description:"also search email To header"`
-	Cc       bool     `short:"c" long:"cc" description:"also search email Cc header"`
-	Subject  bool     `short:"s" long:"subject" description:"also search email Subject header"`
-	Headers  bool     `short:"a" long:"headers" description:"search email From, To, Cc and Subject headers"`
-	DontSkip bool     `short:"k" long:"dontskip" description:"don't skip email parsing errors"`
-
+	Maildirs  []string `short:"d" long:"maildir" description:"path to one or more maildirs"`
+	Mboxes    []string `short:"b" long:"mbox" description:"path to one or more mboxes"`
+	Regexes   []string `short:"r" long:"regexes" description:"one or more golang regular expressions (required)"`
+	Workers   int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
+	From      bool     `short:"f" long:"from" description:"also search email From header"`
+	To        bool     `short:"t" long:"to" description:"also search email To header"`
+	Cc        bool     `short:"c" long:"cc" description:"also search email Cc header"`
+	Subject   bool     `short:"s" long:"subject" description:"also search email Subject header"`
+	MessageID bool     `short:"i" long:"messageid" description:"also search messageid header"`
+	Headers   bool     `short:"a" long:"headers" description:"search email From, To, Cc, Subject and MessageID headers"`
+	DontSkip  bool     `short:"k" long:"dontskip" description:"don't skip email parsing errors"`
+	// internal fields
 	headers           []string         // rationalised headers to search
 	regexes           []*regexp.Regexp // compiled search terms
 	skipParsingErrors bool             // skip email parsing errors
-	Args              struct {
+	// output
+	Args struct {
 		OutputMbox string `description:"output mbox path (must not already exist)"`
 	} `positional-args:"yes" required:"yes"`
 }
@@ -110,12 +112,16 @@ func aggregateHeader(options *Options) {
 	if options.Subject {
 		a["Subject"] = true
 	}
+	if options.MessageID {
+		a["MessageID"] = true
+	}
 	if options.Headers {
 		a = map[string]bool{
-			"From":    true,
-			"To":      true,
-			"Cc":      true,
-			"Subject": true,
+			"From":      true,
+			"To":        true,
+			"Cc":        true,
+			"Subject":   true,
+			"MessageID": true,
 		}
 	}
 	v := []string{}

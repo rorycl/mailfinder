@@ -336,7 +336,6 @@ func TestFinder(t *testing.T) {
 			_ = os.Remove(outFileName)
 		})
 	}
-
 }
 
 func TestHeaderAndBodyFinder(t *testing.T) {
@@ -420,6 +419,16 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			keys:      []string{},
 			processed: 1,
 			found:     0,
+		},
+		{
+			file: "testdata/test_txt.eml",
+			patterns: []*regexp.Regexp{
+				// note use of QuoteMeta to escape "+" character
+				regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+			},
+			keys:      []string{"MessageID"},
+			processed: 1,
+			found:     1,
 		},
 	}
 
