@@ -1,7 +1,7 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.8 : 07 May 2025 : include searching by messageid
+version 0.0.9 : 07 May 2025 : include searching by messageid
 
 Update to use
 [github.com/rorycl/letters](https://github.com/rorycl/letters), which
@@ -45,7 +45,7 @@ the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
-version 0.0.8
+version 0.0.9
 
 e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety"  OutputMbox
 
