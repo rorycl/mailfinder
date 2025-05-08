@@ -25,6 +25,7 @@ func main() {
 	finder, err := NewFinder(
 		options.Args.OutputMbox,
 		options.regexes,
+		options.Matchers,
 		options.headers...,
 	)
 	if err != nil {
