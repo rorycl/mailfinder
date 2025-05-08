@@ -1,7 +1,7 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.9 : 07 May 2025 : include searching by messageid
+version 0.0.10 : 08 May 2025 : add searching by strings
 
 Update to use
 [github.com/rorycl/letters](https://github.com/rorycl/letters), which
@@ -21,13 +21,14 @@ mbox files compressed with xz, gzip and bzip2 is supported.
 Usage:
   mailfinder [options] OutputMbox
 
-Find email by searching the text, enriched text and html bodies and
-attachments of email held in mbox and maildirs mail stores using one or
-more golang regular expressions. At least one mbox or maildir must be
+version 0.0.10
+
+Find email in mbox and maildirs using one or more golang regular
+expressions and/or string matchers. At least one mbox or maildir must be
 specified. Searches can optionally be extended to some header fields
 specified individually or by using the Headers option.
 
-All regular expressions must match.
+All regular expressions and string matchers provided must match.
 
 (See https://yourbasic.org/golang/regexp-cheat-sheet/ for a primer on
 golang's flavour of regular expressions.)
@@ -37,22 +38,27 @@ to include that item. For example, -s or --subject includes searching of
 the subject lines of emails.
 
 Mbox format files can also be xz, gz or bz2 compressed. Decompression
-should be transparent.
+is transparent.
 
-Each mailbox (mbox or maildir) is searched concurrently and pattern
-matching and writing done by a number of workers, with the number set by
-the -w/--workers switch.
+Each mailbox (mbox or maildir) is searched concurrently and searching
+and output mailbox writing done by a number of workers, with the number
+set by the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
-version 0.0.9
+e.g. 
 
-e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety"  OutputMbox
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" OutputMbox
+
+or, to search by both regular expression and strings
+
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -m 'Re: Friday' -r "fire.*safety" OutputMbox
 
 Application Options:
-  -d, --maildir=    path to one or more maildirs
-  -b, --mbox=       path to one or more mboxes
-  -r, --regexes=    one or more golang regular expressions (required)
+  -d, --maildir=    path to maildirs
+  -b, --mbox=       path to mboxes
+  -r, --regexes=    golang regular expressions for search
+  -m, --matchers=   string matchers for search
   -w, --workers=    number of worker goroutines (default: 8)
   -f, --from        also search email From header
   -t, --to          also search email To header
@@ -67,7 +73,6 @@ Help Options:
 
 Arguments:
   OutputMbox:       output mbox path (must not already exist)
-
 ```
 
 ## License
