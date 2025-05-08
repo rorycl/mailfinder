@@ -13,11 +13,19 @@ import (
 func TestSearchText(t *testing.T) {
 
 	tests := []struct {
-		contents  string
-		searchers []*regexp.Regexp
-		matchers  []string
-		ok        bool
+		contents   string
+		searchers  []*regexp.Regexp
+		matchers   []string
+		ok         bool
+		isFatalErr bool
 	}{
+		{
+			// fail due to no searchers or matchers
+			contents:   "",
+			searchers:  []*regexp.Regexp{},
+			matchers:   []string{},
+			isFatalErr: true,
+		},
 		{
 			contents: "abc",
 			searchers: []*regexp.Regexp{
@@ -92,8 +100,11 @@ func TestSearchText(t *testing.T) {
 
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
 			mc, err := newMatchCounter(len(tt.searchers) + len(tt.matchers))
-			if err != nil {
+			if err != nil && !tt.isFatalErr {
 				t.Fatal(err)
+			}
+			if tt.isFatalErr {
+				return
 			}
 			f := Finder{searchers: tt.searchers, matchers: tt.matchers}
 			got := f.searchText(tt.contents, mc)
@@ -263,6 +274,26 @@ func TestSearchHeaders(t *testing.T) {
 				t.Errorf("got %d matches want %d", got, want)
 			}
 		})
+	}
+}
+
+// TestNewFinderFail tests if NewFinder fails as it should
+func TestNewFinderFail(t *testing.T) {
+
+	_, err := NewFinder("/dev/null", []*regexp.Regexp{}, []string{"hi"})
+	if err == nil {
+		t.Fatal("expected mailbox exists error in NewFinder")
+	}
+
+	outFile, err := os.CreateTemp("", "finder_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := outFile.Name()
+	_ = os.Remove(name)
+	_, err = NewFinder(name, []*regexp.Regexp{}, []string{})
+	if err == nil {
+		t.Fatal("expected no searchers error in NewFinder")
 	}
 }
 

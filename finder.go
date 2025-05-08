@@ -186,7 +186,7 @@ func (f *Finder) Summary() string {
 
 // NewFinder creates a new Finder.
 func NewFinder(outputMbox string, searchers []*regexp.Regexp, matchers []string, headerKeys ...string) (*Finder, error) {
-	if searchers == nil && len(matchers) == 0 {
+	if (len(searchers) + len(matchers)) == 0 {
 		return nil, errors.New("no regexps or matchers provided")
 	}
 	mbw, err := mbox.NewMboxWriter(outputMbox)
