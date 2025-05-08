@@ -236,7 +236,7 @@ func TestSearchHeaders(t *testing.T) {
 				regexp.MustCompile("^error email not match$"),
 			},
 			matchers: []string{
-				"this is an error",
+				"error email",
 			},
 			keys: []string{"To", "From", "Subject"},
 			num:  2,
