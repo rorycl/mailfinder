@@ -13,20 +13,21 @@ import (
 func TestSearchText(t *testing.T) {
 
 	tests := []struct {
-		contents string
-		patterns []*regexp.Regexp
-		ok       bool
+		contents  string
+		searchers []*regexp.Regexp
+		matchers  []string
+		ok        bool
 	}{
 		{
 			contents: "abc",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("ab"),
 			},
 			ok: true,
 		},
 		{
 			contents: "abc\ndef",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile(".bc"),
 				regexp.MustCompile("d[en]."),
 			},
@@ -34,15 +35,37 @@ func TestSearchText(t *testing.T) {
 		},
 		{
 			contents: "ABC\ndef",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("(?i).bc"),
 				regexp.MustCompile("d[en]."),
 			},
 			ok: true,
 		},
 		{
+			contents: "ABC\ndef",
+			searchers: []*regexp.Regexp{
+				regexp.MustCompile("(?i).bc"),
+				regexp.MustCompile("d[en]."),
+			},
+			matchers: []string{
+				"ABC",
+			},
+			ok: true,
+		},
+		{
+			contents: "ABC\ndef",
+			searchers: []*regexp.Regexp{
+				regexp.MustCompile("(?i).bc"),
+				regexp.MustCompile("d[en]."),
+			},
+			matchers: []string{
+				"xyz",
+			},
+			ok: false,
+		},
+		{
 			contents: "abc\ndef",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("ab"),
 				regexp.MustCompile("z"),
 			},
@@ -50,19 +73,30 @@ func TestSearchText(t *testing.T) {
 		},
 		{
 			contents: "abc\ndef",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("g"),
 			},
 			ok: false,
+		},
+		{
+			contents: "abc\ndef",
+			matchers: []string{
+				"abc",
+				"def",
+			},
+			ok: true,
 		},
 	}
 
 	for i, tt := range tests {
 
-		mm := matchRegexpCount{}
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			f := Finder{searchers: tt.patterns}
-			got := f.searchText(tt.contents, mm)
+			mc, err := newMatchCounter(len(tt.searchers) + len(tt.matchers))
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := Finder{searchers: tt.searchers, matchers: tt.matchers}
+			got := f.searchText(tt.contents, mc)
 			if got, want := got, tt.ok; got != want {
 				t.Errorf("got %t want %t", got, want)
 			}
@@ -73,14 +107,15 @@ func TestSearchText(t *testing.T) {
 func TestSearchHTML(t *testing.T) {
 
 	tests := []struct {
-		contents string
-		patterns []*regexp.Regexp
-		ok       bool
-		useFunc  func(f *Finder, content string, matchMap matchRegexpCount) bool
+		contents  string
+		searchers []*regexp.Regexp
+		matchers  []string
+		ok        bool
+		useFunc   func(f *Finder, content string, mc *matchCounter) bool
 	}{
 		{
 			contents: "<h1>hello</h1><p>there</p>",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("hello"),
 				regexp.MustCompile("there"),
 			},
@@ -89,7 +124,7 @@ func TestSearchHTML(t *testing.T) {
 		},
 		{
 			contents: "<h1>hello</h1><p>there</p>",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("h1"),
 			},
 			ok:      false,
@@ -97,9 +132,21 @@ func TestSearchHTML(t *testing.T) {
 		},
 		{
 			contents: "<h1>hello</h1><p>there</p>",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("hello"),
 				regexp.MustCompile("there"),
+			},
+			ok:      true,
+			useFunc: (*Finder).searchEnrichedText,
+		},
+		{
+			contents: "<h1>hello</h1><p>there</p>",
+			searchers: []*regexp.Regexp{
+				regexp.MustCompile("hello"),
+			},
+			matchers: []string{
+				"hello",
+				"there",
 			},
 			ok:      true,
 			useFunc: (*Finder).searchEnrichedText,
@@ -107,10 +154,13 @@ func TestSearchHTML(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		mm := matchRegexpCount{}
-		f := &Finder{searchers: tt.patterns}
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			got := tt.useFunc(f, tt.contents, mm)
+			mc, err := newMatchCounter(len(tt.searchers) + len(tt.matchers))
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := &Finder{searchers: tt.searchers, matchers: tt.matchers}
+			got := tt.useFunc(f, tt.contents, mc)
 			if got, want := got, tt.ok; got != want {
 				t.Errorf("got %t want %t", got, want)
 			}
@@ -123,14 +173,15 @@ func TestSearchHeaders(t *testing.T) {
 	tests := []struct {
 		desc      string
 		emailFile string
-		patterns  []*regexp.Regexp
+		searchers []*regexp.Regexp
+		matchers  []string
 		keys      []string
 		num       int
 	}{
 		{
 			desc:      "to ok",
 			emailFile: "testdata/error.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("exampleto"),
 			},
 			keys: []string{"To"},
@@ -139,7 +190,7 @@ func TestSearchHeaders(t *testing.T) {
 		{
 			desc:      "to not ok",
 			emailFile: "testdata/sync.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("notExample"),
 			},
 			keys: []string{"To"},
@@ -148,7 +199,7 @@ func TestSearchHeaders(t *testing.T) {
 		{
 			desc:      "to and from ok",
 			emailFile: "testdata/error.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("examplefrom"),
 				regexp.MustCompile("exampleto"),
 			},
@@ -158,7 +209,7 @@ func TestSearchHeaders(t *testing.T) {
 		{
 			desc:      "to from and subject ok",
 			emailFile: "testdata/error.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("exampleto"),
 				regexp.MustCompile("examplefrom"),
 				regexp.MustCompile("^error email$"),
@@ -169,10 +220,23 @@ func TestSearchHeaders(t *testing.T) {
 		{
 			desc:      "to from and subject partially ok",
 			emailFile: "testdata/error.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("exampleto"),
 				regexp.MustCompile("examplefrom"),
 				regexp.MustCompile("^error email not match$"),
+			},
+			keys: []string{"To", "From", "Subject"},
+			num:  2,
+		},
+		{
+			desc:      "to from and subject partially ok search and match",
+			emailFile: "testdata/error.eml",
+			searchers: []*regexp.Regexp{
+				regexp.MustCompile("exampleto"),
+				regexp.MustCompile("^error email not match$"),
+			},
+			matchers: []string{
+				"this is an error",
 			},
 			keys: []string{"To", "From", "Subject"},
 			num:  2,
@@ -184,16 +248,18 @@ func TestSearchHeaders(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer file.Close()
-		f := Finder{searchers: tt.patterns, headerKeys: tt.keys}
-		opt := parser.WithHeadersOnly()
 
+		opt := parser.WithHeadersOnly()
 		p := letters.NewParser(opt, parser.WithoutAttachments())
 		parsedEmail, err := p.Parse(file)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
-			if got, want := len(f.searchHeaders(parsedEmail.Headers)), tt.num; got != want {
+			f := &Finder{searchers: tt.searchers, matchers: tt.matchers, headerKeys: tt.keys}
+			mc := f.searchHeaders(parsedEmail.Headers)
+			if got, want := mc.got, tt.num; got != want {
 				t.Errorf("got %d matches want %d", got, want)
 			}
 		})
@@ -204,12 +270,13 @@ func TestFinder(t *testing.T) {
 
 	tests := []struct {
 		file             string
-		patterns         []*regexp.Regexp
+		searchers        []*regexp.Regexp
+		matchers         []string
 		processed, found int
 	}{
 		{
 			file: "testdata/test_txt.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
@@ -218,7 +285,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_html.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
@@ -227,7 +294,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_enriched.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
@@ -236,7 +303,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_enriched.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("(?i)this section"),
 			},
 			processed: 1,
@@ -244,7 +311,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_txt.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),
 			},
 			processed: 1,
@@ -252,7 +319,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("1:body:A"), // body text
 			},
 			processed: 1,
@@ -260,7 +327,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("<div dir="), // body html in markup
 			},
 			processed: 1,
@@ -268,7 +335,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("2:body:B"), // body html after stripping
 			},
 			processed: 1,
@@ -276,7 +343,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("1.txt:C"), // text/plain attachment, base64 encoded
 			},
 			processed: 1,
@@ -284,7 +351,7 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
 			},
 			processed: 1,
@@ -292,11 +359,26 @@ func TestFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("1:body:A"), // body text
 				regexp.MustCompile("2:body:B"), // body html after stripping
 				regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
 				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			file: "testdata/test_multipart.eml",
+			searchers: []*regexp.Regexp{
+				regexp.MustCompile("1:body:A"), // body text
+				regexp.MustCompile("2:body:B"), // body html after stripping
+				regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
+				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+			},
+			matchers: []string{
+				"A multipart test.",
+				"1:body:A",
 			},
 			processed: 1,
 			found:     1,
@@ -318,7 +400,7 @@ func TestFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			f, err := NewFinder(outFileName, tt.patterns)
+			f, err := NewFinder(outFileName, tt.searchers, tt.matchers)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -342,13 +424,14 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 
 	tests := []struct {
 		file             string
-		patterns         []*regexp.Regexp
+		searchers        []*regexp.Regexp
+		matchers         []string
 		keys             []string
 		processed, found int
 	}{
 		{
 			file: "testdata/test_txt.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("thisexample.*gmail.com"),
@@ -359,7 +442,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_txt.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("can't match this"),
@@ -370,7 +453,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_html.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("(?i)example user"),
@@ -381,7 +464,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_html.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("(?i)test.*golang"),
@@ -392,7 +475,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_html.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 				regexp.MustCompile("not an example"),
@@ -403,7 +486,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_enriched.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("test.*golang"),
 				regexp.MustCompile("(?i)this section"),
 			},
@@ -413,7 +496,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_txt.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),
 			},
 			keys:      []string{},
@@ -422,9 +505,23 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		},
 		{
 			file: "testdata/test_txt.eml",
-			patterns: []*regexp.Regexp{
+			searchers: []*regexp.Regexp{
 				// note use of QuoteMeta to escape "+" character
 				regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+			},
+			keys:      []string{"MessageID"},
+			processed: 1,
+			found:     1,
+		},
+		{
+			file: "testdata/test_txt.eml",
+			searchers: []*regexp.Regexp{
+				// note use of QuoteMeta to escape "+" character
+				regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+			},
+			matchers: []string{
+				// redundant but useful for testing
+				"CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com",
 			},
 			keys:      []string{"MessageID"},
 			processed: 1,
@@ -447,7 +544,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			f, err := NewFinder(outFileName, tt.patterns, tt.keys...)
+			f, err := NewFinder(outFileName, tt.searchers, tt.matchers, tt.keys...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -490,13 +587,13 @@ func TestSummary(t *testing.T) {
 	outFileName := outFile.Name()
 	_ = os.Remove(outFileName)
 
-	patterns := []*regexp.Regexp{
+	searchers := []*regexp.Regexp{
 		regexp.MustCompile("example"),
 		regexp.MustCompile("(?i)this section"),
 	}
 	keys := []string{"To"}
 
-	f, err := NewFinder(outFileName, patterns, keys...)
+	f, err := NewFinder(outFileName, searchers, []string{}, keys...)
 	if err != nil {
 		t.Fatal(err)
 	}

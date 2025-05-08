@@ -17,72 +17,123 @@ import (
 	"github.com/rorycl/mailboxoperator/mbox"
 )
 
-// matchRegexpCount counts the numer of hits for a regexp
-type matchRegexpCount map[*regexp.Regexp]int
+// matchCounter reports if an email matches the search criteria provided
+// (regexes and matchers) by checking that there is at least one count
+// for each  counts the numer of hits for a regexp or matcher. This
+// should not be used in a concurrent context.
+type matchCounter struct {
+	matchMap map[string]int
+	need     int
+	got      int
+}
 
-// searchText searches only for text content
-func (f *Finder) searchText(content string, matchMap matchRegexpCount) bool {
-	for _, s := range f.searchers {
-		if _, ok := matchMap[s]; ok {
+// newMatchCounter returns a new *matchCounter or error if the needed
+// number of matches is less than 1. "need" should equal the combined
+// length of finder.matchers and finder.searchers.
+func newMatchCounter(need int) (*matchCounter, error) {
+	if need < 1 {
+		return nil, fmt.Errorf("matchCounter initialised with need %d", need)
+	}
+	return &matchCounter{
+		matchMap: map[string]int{},
+		need:     need,
+	}, nil
+}
+
+// found reports if this email has met all matchers and searchers
+func (m *matchCounter) found() bool {
+	return m.got == m.need
+}
+
+// search searches the provided content with the finder.matchers string
+// expressions and finder.searchers regular expressions. If each
+// match/search criteria is met, return true, else false.
+//
+// Consider in future not using regular expressions whose String()
+// exactly matches any string matchers since the latter is faster.
+func (m *matchCounter) search(content string, f *Finder) bool {
+	if m.need == 0 {
+		panic("matchCounter not initialised before use")
+	}
+	if m.found() {
+		return true
+	}
+
+	// search string expressions
+	for _, str := range f.matchers {
+		if _, ok := m.matchMap[str]; ok {
 			continue
 		}
-		if s.MatchString(content) {
-			matchMap[s]++
-			if len(f.searchers) == len(matchMap) {
-				break
+		if strings.Contains(content, str) {
+			m.matchMap[str]++
+			m.got++
+			if m.found() {
+				return true
 			}
 		}
 	}
-	return len(matchMap) == len(f.searchers)
+
+	// search regular expressions.
+	// Note that regular expressions are recorded in the matchMap with
+	// an "r#" prefix to try avoid inadvertent overlaps with string
+	// matcher keys.
+	for _, r := range f.searchers {
+		if _, ok := m.matchMap["r#"+r.String()]; ok {
+			continue
+		}
+		if r.MatchString(content) {
+			m.matchMap["r#"+r.String()]++
+			m.got++
+			if m.found() {
+				return true
+			}
+		}
+	}
+	return m.found()
+}
+
+// searchText searches only for text content
+func (f *Finder) searchText(content string, mc *matchCounter) bool {
+	return mc.search(content, f)
 }
 
 // searchEnrichedText redirects to searchHTML
-func (f *Finder) searchEnrichedText(content string, matchMap matchRegexpCount) bool {
-	return f.searchHTML(content, matchMap)
+func (f *Finder) searchEnrichedText(content string, mc *matchCounter) bool {
+	return f.searchHTML(content, mc)
 }
 
 // searchHTML converts html to text and then searches via searchText
-func (f *Finder) searchHTML(content string, matchMap matchRegexpCount) bool {
+func (f *Finder) searchHTML(content string, mc *matchCounter) bool {
 	plainText := html2text.HTML2Text(content)
-	return f.searchText(plainText, matchMap)
+	return f.searchText(plainText, mc)
 }
 
 // searchHeaders counts matches against searchers amongst the supplied
 // header strings to search
-func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
-	matchMap := matchRegexpCount{}
+func (f *Finder) searchHeaders(headers email.Headers) *matchCounter {
+
+	mc, err := newMatchCounter(len(f.searchers) + len(f.matchers))
+	if err != nil {
+		panic(fmt.Sprintf("invalid initialisation of NewMatchCounter %s", err))
+	}
+
 	if len(f.headerKeys) == 0 {
-		return matchMap
+		return mc
 	}
 
 	findFromAddresses := func(addresses ...*mail.Address) {
 		for _, a := range addresses {
-			for _, s := range f.searchers {
-				if len(f.searchers) == len(matchMap) {
-					return
-				}
-				if _, ok := matchMap[s]; ok { // continue if already a match
-					continue
-				}
-				if s.MatchString(a.Name) || s.MatchString(a.Address) {
-					matchMap[s]++
-				}
+			if mc.search(a.Name, f) {
+				return
+			}
+			if mc.search(a.Address, f) {
+				return
 			}
 		}
 	}
 
 	findFromString := func(str string) {
-		for _, s := range f.searchers {
-			if len(f.searchers) == len(matchMap) {
-				return
-			}
-			if _, ok := matchMap[s]; ok { // continue if already a match
-				continue
-			}
-			if s.MatchString(str) {
-				matchMap[s]++
-			}
-		}
+		mc.search(str, f)
 	}
 
 	for _, k := range f.headerKeys {
@@ -103,12 +154,13 @@ func (f *Finder) searchHeaders(headers email.Headers) matchRegexpCount {
 			findFromString(headers.MessageID)
 		}
 	}
-	return matchMap
+	return mc
 }
 
 // Finder is a struct with settings for performing mail finding
 type Finder struct {
 	searchers         []*regexp.Regexp
+	matchers          []string
 	headerKeys        []string
 	mboxWriter        *mbox.MboxWriter
 	skipParsingErrors bool
@@ -133,9 +185,9 @@ func (f *Finder) Summary() string {
 }
 
 // NewFinder creates a new Finder.
-func NewFinder(outputMbox string, searchers []*regexp.Regexp, headerKeys ...string) (*Finder, error) {
-	if searchers == nil {
-		return nil, errors.New("no regexps provided")
+func NewFinder(outputMbox string, searchers []*regexp.Regexp, matchers []string, headerKeys ...string) (*Finder, error) {
+	if searchers == nil && len(matchers) == 0 {
+		return nil, errors.New("no regexps or matchers provided")
 	}
 	mbw, err := mbox.NewMboxWriter(outputMbox)
 	if err != nil {
@@ -143,6 +195,7 @@ func NewFinder(outputMbox string, searchers []*regexp.Regexp, headerKeys ...stri
 	}
 	f := Finder{
 		searchers:  searchers,
+		matchers:   matchers,
 		headerKeys: headerKeys,
 		mboxWriter: mbw,
 	}
@@ -181,28 +234,37 @@ func (f *Finder) Operate(r io.Reader) error {
 	}
 
 	// search headers
-	matchMap := f.searchHeaders(email.Headers)
+	mc := f.searchHeaders(email.Headers)
+	ok := mc.found()
 
 	// search content
-	var ok bool = false
-	if email.Text != "" {
-		ok = f.searchText(email.Text, matchMap)
+	if email.Text != "" && !ok {
+		ok = f.searchText(email.Text, mc)
 	}
 	if email.EnrichedText != "" && !ok {
-		ok = f.searchEnrichedText(email.EnrichedText, matchMap)
+		ok = f.searchEnrichedText(email.EnrichedText, mc)
 	}
 	if email.HTML != "" && !ok {
-		ok = f.searchHTML(email.HTML, matchMap)
+		ok = f.searchHTML(email.HTML, mc)
 	}
 	if len(email.Files) > 0 && !ok {
 		for _, fi := range email.Files {
 			switch fi.ContentInfo.Type {
 			case "text/plain":
-				ok = f.searchText(string(fi.Data), matchMap)
+				ok = f.searchText(string(fi.Data), mc)
+				if ok {
+					break
+				}
 			case "text/enriched":
-				ok = f.searchEnrichedText(string(fi.Data), matchMap)
+				ok = f.searchEnrichedText(string(fi.Data), mc)
+				if ok {
+					break
+				}
 			case "text/html":
-				ok = f.searchHTML(string(fi.Data), matchMap)
+				ok = f.searchHTML(string(fi.Data), mc)
+				if ok {
+					break
+				}
 			}
 		}
 	}
