@@ -38,6 +38,16 @@ func TestCmdOptions(t *testing.T) {
 			err:  true,
 		},
 		{
+			desc: "matcher not long enough",
+			args: []string{"progname", "-d", "testdata/maildir/example", "-m", "hi", "output.mbox"},
+			err:  true,
+		},
+		{
+			desc: "matcher ok",
+			args: []string{"progname", "-d", "testdata/maildir/example", "-m", "hi there", "output.mbox"},
+			err:  false,
+		},
+		{
 			desc: "missing output mbox",
 			args: []string{"progname", "-d", "testdata/maildir/example", "-r", "hi"},
 			err:  true,
@@ -61,6 +71,11 @@ func TestCmdOptions(t *testing.T) {
 			desc: "too many workers",
 			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "17", "-r", "hi", "output.mbox"},
 			err:  true,
+		},
+		{
+			desc: "ok matchers and regex",
+			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "12", "-r", "hi", "-m", "there", "output.mbox"},
+			err:  false,
 		},
 	}
 
@@ -116,6 +131,9 @@ func TestOptionsFromMailBoxes(t *testing.T) {
 		t.Errorf("number of regexes got %d want %d", got, want)
 	}
 	fmt.Printf("%#v\n", o)
+
+	// clean up
+	_ = os.Remove(outMboxName)
 
 }
 

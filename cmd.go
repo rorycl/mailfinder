@@ -10,13 +10,14 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const version string = "0.0.9"
+const version string = "0.0.10"
 
 // Options are flag options
 type Options struct {
-	Maildirs  []string `short:"d" long:"maildir" description:"path to one or more maildirs"`
-	Mboxes    []string `short:"b" long:"mbox" description:"path to one or more mboxes"`
-	Regexes   []string `short:"r" long:"regexes" description:"one or more golang regular expressions (required)"`
+	Maildirs  []string `short:"d" long:"maildir" description:"path to maildirs"`
+	Mboxes    []string `short:"b" long:"mbox" description:"path to mboxes"`
+	Regexes   []string `short:"r" long:"regexes" description:"golang regular expressions for search"`
+	Matchers  []string `short:"m" long:"matchers" description:"string matchers for search"`
 	Workers   int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
 	From      bool     `short:"f" long:"from" description:"also search email From header"`
 	To        bool     `short:"t" long:"to" description:"also search email To header"`
@@ -71,12 +72,14 @@ func (o *Options) aggregateHeaders() {
 
 var cmdTpl string = `[options] OutputMbox
 
-Find email in mbox and maildirs using one or more golang regular
-expressions. At least one mbox or maildir must be specified. Searches
-can optionally be extended to some header fields specified individually
-or by using the Headers option.
+version %s
 
-All regular expressions must match.
+Find email in mbox and maildirs using one or more golang regular
+expressions and/or string matchers. At least one mbox or maildir must be
+specified. Searches can optionally be extended to some header fields
+specified individually or by using the Headers option.
+
+All regular expressions and string matchers provided must match.
 
 (See https://yourbasic.org/golang/regexp-cheat-sheet/ for a primer on
 golang's flavour of regular expressions.)
@@ -86,17 +89,21 @@ to include that item. For example, -s or --subject includes searching of
 the subject lines of emails.
 
 Mbox format files can also be xz, gz or bz2 compressed. Decompression
-should be transparent.
+is transparent.
 
-Each mailbox (mbox or maildir) is searched concurrently and pattern
-matching and writing done by a number of workers, with the number set by
-the -w/--workers switch.
+Each mailbox (mbox or maildir) is searched concurrently and searching
+and output mailbox writing done by a number of workers, with the number
+set by the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
-version %s
+e.g. 
 
-e.g. mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" `
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" OutputMbox
+
+or, to search by both regular expression and strings
+
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -m 'Re: Friday' -r "fire.*safety"`
 
 // checkFileExists checks if a file exists
 func checkFileExists(path string) bool {
@@ -154,8 +161,8 @@ func ParseOptions() (*Options, error) {
 			return nil, fmt.Errorf("mbox %s does not exist", m)
 		}
 	}
-	if len(options.Regexes) == 0 {
-		return nil, errors.New("no regular expressions provided")
+	if len(options.Regexes) == 0 && len(options.Matchers) == 0 {
+		return nil, errors.New("no regular expressions or string matchers provided")
 	}
 	for i, r := range options.Regexes {
 		rr, err := regexp.Compile(r)
@@ -163,6 +170,11 @@ func ParseOptions() (*Options, error) {
 			return nil, fmt.Errorf("regular expression %d did not compile: %s", i, err)
 		}
 		options.regexes = append(options.regexes, rr)
+	}
+	for _, r := range options.Matchers {
+		if len(r) < 5 {
+			return nil, fmt.Errorf("matcher %s is less than 5 characters in length", r)
+		}
 	}
 	if options.Workers < 1 {
 		return nil, errors.New("at least 1 worker is needed to process work")
