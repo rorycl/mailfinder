@@ -1,7 +1,7 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.11 : 09 May 2025 : addition of headers-only search
+version 0.0.12 : 10 May 2025 : search by date
 
 Update to use
 [github.com/rorycl/letters](https://github.com/rorycl/letters), which
@@ -21,7 +21,7 @@ mbox files compressed with xz, gzip and bzip2 is supported.
 Usage:
   mailfinder [options] OutputMbox
 
-version 0.0.11
+version 0.0.12
 
 Find email in mbox and maildirs using one or more golang regular
 expressions and/or string matchers. At least one mbox or maildir must be
@@ -59,14 +59,16 @@ Application Options:
   -b, --mbox=        path to mboxes
   -r, --regex=       golang regular expressions for search
   -m, --matcher=     string expressions for search
-  -f, --from         also search email From header
-  -t, --to           also search email To header
-  -c, --cc           also search email Cc header
-  -s, --subject      also search email Subject header
-  -i, --messageid    also search messageid header
+      --from         also search email From header
+      --to           also search email To header
+      --cc           also search email Cc header
+      --subject      also search email Subject header
+      --messageid    also search messageid header
   -a, --headers      search email From, To, Cc, Subject and MessageID headers
   -k, --dontskip     don't skip email parsing errors
   -o, --headersonly  don't search bodies
+      --datefrom=    inclusive date from which to search (2006-01-02 format)
+      --dateto=      inclusive date to which to search (2006-01-02 format)
   -w, --workers=     number of worker goroutines (default: 8)
 
 Help Options:
@@ -74,6 +76,7 @@ Help Options:
 
 Arguments:
   OutputMbox:        output mbox path (must not already exist)
+
 ```
 
 ## License
