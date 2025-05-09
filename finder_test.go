@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/rorycl/letters"
 	"github.com/rorycl/letters/parser"
@@ -188,6 +189,8 @@ func TestSearchHeaders(t *testing.T) {
 		matchers  []string
 		keys      []string
 		num       int
+		dateFrom  time.Time
+		dateTo    time.Time
 	}{
 		{
 			desc:      "to ok",
@@ -279,7 +282,11 @@ func TestSearchHeaders(t *testing.T) {
 		}
 
 		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
-			f := &Finder{searchers: tt.searchers, matchers: tt.matchers, headerKeys: tt.keys}
+			f := &Finder{
+				searchers:  tt.searchers,
+				matchers:   tt.matchers,
+				headerKeys: tt.keys,
+			}
 			mc := f.searchHeaders(parsedEmail.Headers)
 			if got, want := mc.got, tt.num; got != want {
 				t.Errorf("got %d matches want %d", got, want)
@@ -477,6 +484,46 @@ func TestFinder(t *testing.T) {
 			},
 			processed: 1,
 			found:     1,
+		},
+		{
+			// 2025-01-01
+			file: "testdata/error.eml",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("exampleto"),
+				},
+				dateFrom: time.Date(2024, 12, 30, 0, 0, 0, 0, time.Local),
+				headers:  []string{"To"},
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			// 2025-01-01
+			file: "testdata/error.eml",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("exampleto"),
+				},
+				dateTo:  time.Date(2025, 1, 2, 0, 0, 0, 0, time.Local),
+				headers: []string{"To"},
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			// 2025-01-01
+			file: "testdata/error.eml",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("exampleto"),
+				},
+				dateFrom: time.Date(2025, 1, 2, 0, 0, 0, 0, time.Local),
+				dateTo:   time.Date(2025, 1, 3, 0, 0, 0, 0, time.Local),
+				headers:  []string{"To"},
+			},
+			processed: 1,
+			found:     0,
 		},
 	}
 
