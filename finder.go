@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/k3a/html2text"
 	"github.com/rorycl/letters"
@@ -165,6 +166,7 @@ type Finder struct {
 	mboxWriter        *mbox.MboxWriter
 	headersOnly       bool
 	skipParsingErrors bool
+	dateFrom, dateTo  time.Time
 	processed         int
 	found             int
 	foundMutex        sync.Mutex
@@ -184,6 +186,17 @@ func (f *Finder) addFound(b bool) {
 // Summary prints a summary of the found emails
 func (f *Finder) Summary() string {
 	return fmt.Sprintf("processed %d found %d emails", f.processed, f.found)
+}
+
+// inDate determines if the supplied date is between dateFrom and dateTo
+func (f *Finder) inDate(d time.Time) bool {
+	if !f.dateFrom.IsZero() && d.Before(f.dateFrom) {
+		return false
+	}
+	if !f.dateTo.IsZero() && d.After(f.dateTo) {
+		return false
+	}
+	return true
 }
 
 // NewFinder creates a new Finder.
@@ -207,6 +220,8 @@ func NewFinder(po *ProgramOptions) (*Finder, error) {
 		headerKeys:        po.headers,
 		mboxWriter:        mbw,
 		skipParsingErrors: po.skipParsingErrors,
+		dateFrom:          po.dateFrom,
+		dateTo:            po.dateTo,
 	}
 	if f.headersOnly {
 		f.emailParser = letters.NewParser(
@@ -249,12 +264,20 @@ func (f *Finder) Operate(r io.Reader) error {
 		return nil
 	}
 
+	// early date filter
+	if !f.inDate(email.Headers.Date) {
+		f.addFound(false)
+		return nil
+	}
+
 	// search headers
 	mc := f.searchHeaders(email.Headers)
 	ok := mc.found()
-
 	if f.headersOnly {
-		// drain tee
+		if !ok { // return early
+			return nil
+		}
+		// drain tee to allow buf to be written to output
 		_, err = io.ReadAll(tee)
 		if err != nil {
 			return fmt.Errorf("tee draining error %w", err)
@@ -292,6 +315,7 @@ func (f *Finder) Operate(r io.Reader) error {
 			}
 		}
 	}
+
 	if !ok {
 		f.addFound(false)
 		return nil
