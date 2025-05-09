@@ -13,8 +13,8 @@ import (
 
 const version string = "0.0.11"
 
-// Options are flag options
-type Options struct {
+// CmdOptions are flag options
+type CmdOptions struct {
 	Maildirs    []string `short:"d" long:"maildir" description:"path to maildirs"`
 	Mboxes      []string `short:"b" long:"mbox" description:"path to mboxes"`
 	Regexes     []string `short:"r" long:"regex" description:"golang regular expressions for search"`
@@ -30,15 +30,25 @@ type Options struct {
 	DateFrom    string   `long:"datefrom" description:"inclusive date from which to search (2006-01-02 format)"`
 	DateTo      string   `long:"dateto" description:"inclusive date to which to search (2006-01-02 format)"`
 	Workers     int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
-	// internal fields
-	headers           []string         // rationalised headers to search
-	regexes           []*regexp.Regexp // compiled search terms
-	skipParsingErrors bool             // skip email parsing errors
-	dateFrom, dateTo  time.Time        // parsed dates
 	// output
 	Args struct {
 		OutputMbox string `description:"output mbox path (must not already exist)"`
 	} `positional-args:"yes" required:"yes"`
+}
+
+// ProgramOptions are the rationalised CmdOptions required for running the
+// program.
+type ProgramOptions struct {
+	maildirs          []string         // maildirs to search
+	mboxes            []string         // mboxes to search
+	regexes           []*regexp.Regexp // compiled search terms
+	matchers          []string         // string expressions to search
+	headers           []string         // rationalised headers to search
+	headersOnly       bool
+	skipParsingErrors bool      // skip email parsing errors
+	dateFrom, dateTo  time.Time // parsed dates
+	workers           int       // number of worker goroutines
+	outputMbox        string    // output mailbox
 }
 
 // dateFmt is the accepted date format
@@ -50,7 +60,7 @@ func toDate(s string) (time.Time, error) {
 }
 
 // aggregateHeaders aggregates header options into options.headers
-func (o *Options) aggregateHeaders() {
+func (o *CmdOptions) aggregateHeaders() []string {
 	a := map[string]bool{}
 	if o.From {
 		a["From"] = true
@@ -80,7 +90,7 @@ func (o *Options) aggregateHeaders() {
 	for k := range a {
 		v = append(v, k)
 	}
-	o.headers = v
+	return v
 }
 
 var cmdTpl string = `[options] OutputMbox
@@ -151,16 +161,20 @@ func (p ParserError) Error() string {
 	return fmt.Sprintf("%v", p.err)
 }
 
-// ParseOptions parses the command line options
-func ParseOptions() (*Options, error) {
+// ParseOptions parses the command line options and returns a pointer to
+// a ProgramOptions struct.
+func ParseOptions() (*ProgramOptions, error) {
 
-	var options Options
+	var options CmdOptions
 	var parser = flags.NewParser(&options, flags.Default)
 	parser.Usage = fmt.Sprintf(cmdTpl, version)
 
 	if _, err := parser.Parse(); err != nil {
 		return nil, ParserError{err}
 	}
+
+	po := ProgramOptions{}
+
 	// all maildirs and mailboxes
 	if (len(options.Maildirs) + len(options.Mboxes)) == 0 {
 		return nil, errors.New("no maildirs or mboxes found")
@@ -177,6 +191,9 @@ func ParseOptions() (*Options, error) {
 			return nil, fmt.Errorf("mbox %s does not exist", m)
 		}
 	}
+	po.maildirs = options.Maildirs
+	po.mboxes = options.Mboxes
+
 	// all search matchers
 	if len(options.Regexes) == 0 && len(options.Matchers) == 0 {
 		return nil, errors.New("no regular expressions or string matchers provided")
@@ -187,7 +204,7 @@ func ParseOptions() (*Options, error) {
 		if err != nil {
 			return nil, fmt.Errorf("regular expression %d did not compile: %s", i, err)
 		}
-		options.regexes = append(options.regexes, rr)
+		po.regexes = append(po.regexes, rr)
 	}
 	// string matchers
 	for _, r := range options.Matchers {
@@ -195,23 +212,25 @@ func ParseOptions() (*Options, error) {
 			return nil, fmt.Errorf("matcher %s is less than 5 characters in length", r)
 		}
 	}
+	po.matchers = options.Matchers
+
 	// dates
 	var err error
 	if options.DateFrom != "" {
-		options.dateFrom, err = toDate(options.DateFrom)
+		po.dateFrom, err = toDate(options.DateFrom)
 		if err != nil {
 			return nil, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateFrom, err)
 		}
 	}
 	if options.DateTo != "" {
-		options.dateTo, err = toDate(options.DateTo)
+		po.dateTo, err = toDate(options.DateTo)
 		if err != nil {
 			return nil, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateTo, err)
 		}
 	}
-	if !options.dateFrom.IsZero() && !options.dateTo.IsZero() {
-		if options.dateTo.Before(options.dateFrom) {
-			return nil, fmt.Errorf("to date %s is before from date %s", options.dateTo.Format("2006-01-02"), options.dateFrom.Format("2006-01-02"))
+	if !po.dateFrom.IsZero() && !po.dateTo.IsZero() {
+		if po.dateTo.Before(po.dateFrom) {
+			return nil, fmt.Errorf("to date %s is before from date %s", po.dateTo.Format("2006-01-02"), po.dateFrom.Format("2006-01-02"))
 		}
 	}
 	// goroutine workers
@@ -221,8 +240,11 @@ func ParseOptions() (*Options, error) {
 	if got, want := options.Workers, runtime.NumCPU()*4; got > want {
 		return nil, fmt.Errorf("it is inadvisable to have workers of more than four times system cpus (%d)", runtime.NumCPU())
 	}
+	po.workers = options.Workers
+
 	// skip errors
-	options.skipParsingErrors = !options.DontSkip
+	po.skipParsingErrors = !options.DontSkip
+
 	// output
 	if options.Args.OutputMbox == "" {
 		return nil, errors.New("no output mbox path provided")
@@ -230,13 +252,15 @@ func ParseOptions() (*Options, error) {
 	if checkFileExists(options.Args.OutputMbox) {
 		return nil, fmt.Errorf("output mbox %s already exists", options.Args.OutputMbox)
 	}
+	po.outputMbox = options.Args.OutputMbox
 
 	// aggregate the headers
-	options.aggregateHeaders()
+	po.headers = options.aggregateHeaders()
+	po.headersOnly = options.HeadersOnly
 
-	if options.HeadersOnly && len(options.headers) == 0 {
+	if po.headersOnly && len(po.headers) == 0 {
 		return nil, errors.New("to use headersonly a header option must also be selected")
 	}
 
-	return &options, nil
+	return &po, nil
 }

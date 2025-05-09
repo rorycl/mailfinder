@@ -280,7 +280,14 @@ func TestSearchHeaders(t *testing.T) {
 // TestNewFinderFail tests if NewFinder fails as it should
 func TestNewFinderFail(t *testing.T) {
 
-	_, err := NewFinder("/dev/null", []*regexp.Regexp{}, []string{"hi"}, false)
+	_, err := NewFinder(
+		&ProgramOptions{
+			outputMbox:  "/dev/null",
+			regexes:     []*regexp.Regexp{},
+			matchers:    []string{"hi"},
+			headersOnly: false,
+		},
+	)
 	if err == nil {
 		t.Fatal("expected mailbox exists error in NewFinder")
 	}
@@ -295,12 +302,26 @@ func TestNewFinderFail(t *testing.T) {
 		return name
 	}
 
-	_, err = NewFinder(tFile(), []*regexp.Regexp{}, []string{}, false)
+	_, err = NewFinder(
+		&ProgramOptions{
+			outputMbox:  tFile(),
+			regexes:     []*regexp.Regexp{},
+			matchers:    []string{},
+			headersOnly: false,
+		},
+	)
 	if err == nil {
 		t.Fatal("expected no searchers error in NewFinder")
 	}
 
-	_, err = NewFinder(tFile(), []*regexp.Regexp{}, []string{"hi"}, true)
+	_, err = NewFinder(
+		&ProgramOptions{
+			outputMbox:  tFile(),
+			regexes:     []*regexp.Regexp{},
+			matchers:    []string{"hi"},
+			headersOnly: true, // needs headers to accompany
+		},
+	)
 	if err == nil {
 		t.Fatal("expected headersonly missing headers error in NewFinder")
 	}
@@ -310,116 +331,138 @@ func TestFinder(t *testing.T) {
 
 	tests := []struct {
 		file             string
-		searchers        []*regexp.Regexp
-		matchers         []string
-		headersOnly      bool
+		po               *ProgramOptions
 		processed, found int
 	}{
 		{
 			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_html.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_enriched.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_enriched.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("(?i)this section"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("(?i)this section"),
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("This is not a test"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("This is not a test"),
+				},
 			},
 			processed: 1,
 			found:     0,
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("1:body:A"), // body text
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("1:body:A"), // body text
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("<div dir="), // body html in markup
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("<div dir="), // body html in markup
+				},
 			},
 			processed: 1,
 			found:     0, // fail
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("2:body:B"), // body html after stripping
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("2:body:B"), // body html after stripping
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("1.txt:C"), // text/plain attachment, base64 encoded
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("1.txt:C"), // text/plain attachment, base64 encoded
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("1:body:A"), // body text
-				regexp.MustCompile("2:body:B"), // body html after stripping
-				regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
-				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("1:body:A"), // body text
+					regexp.MustCompile("2:body:B"), // body html after stripping
+					regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
+					regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+				},
 			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_multipart.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("1:body:A"), // body text
-				regexp.MustCompile("2:body:B"), // body html after stripping
-				regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
-				regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
-			},
-			matchers: []string{
-				"A multipart test.",
-				"1:body:A",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("1:body:A"), // body text
+					regexp.MustCompile("2:body:B"), // body html after stripping
+					regexp.MustCompile("1.txt:C"),  // text/plain attachment, base64 encoded
+					regexp.MustCompile("2.html:D"), // text/html attachment, base64 encoded
+				},
+				matchers: []string{
+					"A multipart test.",
+					"1:body:A",
+				},
 			},
 			processed: 1,
 			found:     1,
@@ -441,7 +484,9 @@ func TestFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			f, err := NewFinder(outFileName, tt.searchers, tt.matchers, tt.headersOnly)
+			tt.po.outputMbox = outFileName
+
+			f, err := NewFinder(tt.po)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -465,131 +510,150 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 
 	tests := []struct {
 		file             string
-		searchers        []*regexp.Regexp
-		matchers         []string
-		keys             []string
-		headersOnly      bool
+		po               *ProgramOptions
 		processed, found int
 	}{
 		{
 			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
-				regexp.MustCompile("thisexample.*gmail.com"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+					regexp.MustCompile("thisexample.*gmail.com"),
+				},
+				headers: []string{"To", "From", "Subject"},
 			},
-			keys:      []string{"To", "From", "Subject"},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
-				regexp.MustCompile("can't match this"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+					regexp.MustCompile("can't match this"),
+				},
+				headers: []string{"To", "From", "Subject"},
 			},
-			keys:      []string{"To", "From", "Subject"},
 			processed: 1,
 			found:     0,
 		},
 		{
 			file: "testdata/test_html.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
-				regexp.MustCompile("(?i)example user"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+					regexp.MustCompile("(?i)example user"),
+				},
+				headers: []string{"To"},
 			},
-			keys:      []string{"To"},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_html.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
-				regexp.MustCompile("(?i)test.*golang"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+					regexp.MustCompile("(?i)test.*golang"),
+				},
+				headers: []string{"Subject"},
 			},
-			keys:      []string{"Subject"},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_html.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
-				regexp.MustCompile("not an example"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+					regexp.MustCompile("not an example"),
+				},
+				headers: []string{"To"},
 			},
-			keys:      []string{"To"},
 			processed: 1,
 			found:     0,
 		},
 		{
 			file: "testdata/test_enriched.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("test.*golang"),
-				regexp.MustCompile("(?i)this section"),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("test.*golang"),
+					regexp.MustCompile("(?i)this section"),
+				},
+				headers: []string{},
 			},
-			keys:      []string{},
 			processed: 1,
 			found:     1,
 		},
 		{
-			file:      "testdata/test_enriched.eml",
-			searchers: []*regexp.Regexp{},
-			matchers: []string{
-				"thisexample@gmail.com",     // From
-				"This is a test for golang", // in text/html attachment, not header
+			file: "testdata/test_enriched.eml",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{},
+				matchers: []string{
+					"thisexample@gmail.com",     // From
+					"This is a test for golang", // in text/html attachment, not header
+				},
+				headers:     []string{"From"},
+				headersOnly: true,
 			},
-			keys:        []string{"From"},
-			headersOnly: true,
-			processed:   1,
-			found:       0,
-		},
-		{
-			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				regexp.MustCompile("This is not a test"),
-			},
-			keys:      []string{},
 			processed: 1,
 			found:     0,
 		},
 		{
 			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				// note use of QuoteMeta to escape "+" character
-				regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					regexp.MustCompile("This is not a test"),
+				},
+				headers: []string{},
 			},
-			keys:      []string{"MessageID"},
+			processed: 1,
+			found:     0,
+		},
+		{
+			file: "testdata/test_txt.eml",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					// note use of QuoteMeta to escape "+" character
+					regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+				},
+				headers: []string{"MessageID"},
+			},
 			processed: 1,
 			found:     1,
 		},
 		{
 			file: "testdata/test_txt.eml",
-			searchers: []*regexp.Regexp{
-				// note use of QuoteMeta to escape "+" character
-				regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{
+					// note use of QuoteMeta to escape "+" character
+					regexp.MustCompile(regexp.QuoteMeta(`CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com`)),
+				},
+				matchers: []string{
+					// redundant but useful for testing
+					"CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com",
+				},
+				headers: []string{"MessageID"},
 			},
-			matchers: []string{
-				// redundant but useful for testing
-				"CAPQX7QTZxwWh31YxJQd+DcLCm0qTRxCErYwAYRnd-FiFk=hdrQ@mail.gmail.com",
-			},
-			keys:      []string{"MessageID"},
 			processed: 1,
 			found:     1,
 		},
 		{
 			// headers only
-			file:        "testdata/test_txt.eml",
-			searchers:   []*regexp.Regexp{regexp.MustCompile(`CAPQX7QTZ`)},
-			matchers:    []string{"CAPQX7QTZ"},
-			keys:        []string{"MessageID"},
-			headersOnly: true,
-			processed:   1,
-			found:       1,
+			file: "testdata/test_txt.eml",
+			po: &ProgramOptions{
+				regexes:     []*regexp.Regexp{regexp.MustCompile(`CAPQX7QTZ`)},
+				matchers:    []string{"CAPQX7QTZ"},
+				headers:     []string{"MessageID"},
+				headersOnly: true,
+			},
+			processed: 1,
+			found:     1,
 		},
 	}
 
@@ -608,13 +672,9 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			f, err := NewFinder(
-				outFileName,
-				tt.searchers,
-				tt.matchers,
-				tt.headersOnly,
-				tt.keys...,
-			)
+			tt.po.outputMbox = outFileName
+
+			f, err := NewFinder(tt.po)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -657,13 +717,17 @@ func TestSummary(t *testing.T) {
 	outFileName := outFile.Name()
 	_ = os.Remove(outFileName)
 
-	searchers := []*regexp.Regexp{
-		regexp.MustCompile("example"),
-		regexp.MustCompile("(?i)this section"),
+	po := &ProgramOptions{
+		regexes: []*regexp.Regexp{
+			regexp.MustCompile("example"),
+			regexp.MustCompile("(?i)this section"),
+		},
+		headers:     []string{"To"},
+		outputMbox:  outFileName,
+		headersOnly: false,
 	}
-	keys := []string{"To"}
 
-	f, err := NewFinder(outFileName, searchers, []string{}, false, keys...)
+	f, err := NewFinder(po)
 	if err != nil {
 		t.Fatal(err)
 	}

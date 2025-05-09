@@ -11,7 +11,7 @@ import (
 var exit func(code int) = os.Exit
 
 func main() {
-	options, err := ParseOptions()
+	opts, err := ParseOptions()
 	if err != nil {
 		var e ParserError
 		if !errors.As(err, &e) {
@@ -22,22 +22,15 @@ func main() {
 	}
 
 	// initialise finder
-	finder, err := NewFinder(
-		options.Args.OutputMbox,
-		options.regexes,
-		options.Matchers,
-		options.HeadersOnly,
-		options.headers...,
-	)
+	finder, err := NewFinder(opts)
 	if err != nil {
 		fmt.Println(err)
 		exit(1)
 		return
 	}
-	finder.skipParsingErrors = options.skipParsingErrors
 
 	// initialise mailbox operator
-	mo, err := mbo.NewMailboxOperator(options.Mboxes, options.Maildirs, finder)
+	mo, err := mbo.NewMailboxOperator(opts.mboxes, opts.maildirs, finder)
 	if err != nil {
 		fmt.Println(err)
 		exit(1)

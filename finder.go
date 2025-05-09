@@ -186,25 +186,26 @@ func (f *Finder) Summary() string {
 }
 
 // NewFinder creates a new Finder.
-func NewFinder(outputMbox string, searchers []*regexp.Regexp, matchers []string, headersOnly bool, headerKeys ...string) (*Finder, error) {
-	if (len(searchers) + len(matchers)) == 0 {
+func NewFinder(po *ProgramOptions) (*Finder, error) {
+	if (len(po.regexes) + len(po.matchers)) == 0 {
 		return nil, errors.New("no regexps or matchers provided")
 	}
-	if headersOnly && len(headerKeys) == 0 {
+	if po.headersOnly && len(po.headers) == 0 {
 		return nil, errors.New("no headers provided for headersOnly search")
 	}
 
-	mbw, err := mbox.NewMboxWriter(outputMbox)
+	mbw, err := mbox.NewMboxWriter(po.outputMbox)
 	if err != nil {
 		return nil, fmt.Errorf("NewFinder error: %w", err)
 	}
 
 	f := Finder{
-		searchers:   searchers,
-		matchers:    matchers,
-		headersOnly: headersOnly,
-		headerKeys:  headerKeys,
-		mboxWriter:  mbw,
+		searchers:         po.regexes,
+		matchers:          po.matchers,
+		headersOnly:       po.headersOnly,
+		headerKeys:        po.headers,
+		mboxWriter:        mbw,
+		skipParsingErrors: po.skipParsingErrors,
 	}
 	return &f, nil
 }

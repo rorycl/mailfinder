@@ -171,47 +171,47 @@ func TestHeaderOptions(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		options *Options
+		options *CmdOptions
 		results []string
 	}{
 		{
 			name:    "empty",
-			options: &Options{},
+			options: &CmdOptions{},
 			results: []string{},
 		},
 		{
 			name:    "from",
-			options: &Options{From: true},
+			options: &CmdOptions{From: true},
 			results: []string{"From"},
 		},
 		{
 			name:    "from and subject",
-			options: &Options{From: true, Subject: true},
+			options: &CmdOptions{From: true, Subject: true},
 			results: []string{"From", "Subject"},
 		},
 		{
 			name:    "from, subject and messageID",
-			options: &Options{From: true, Subject: true, MessageID: true},
+			options: &CmdOptions{From: true, Subject: true, MessageID: true},
 			results: []string{"From", "Subject", "MessageID"},
 		},
 		{
 			name:    "headers",
-			options: &Options{Headers: true},
+			options: &CmdOptions{Headers: true},
 			results: []string{"From", "To", "Cc", "Subject", "MessageID"},
 		},
 		{
 			name:    "headers and from",
-			options: &Options{From: true, Headers: true},
+			options: &CmdOptions{From: true, Headers: true},
 			results: []string{"From", "To", "Cc", "Subject", "MessageID"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("test_%s", tt.name), func(t *testing.T) {
-			tt.options.aggregateHeaders()
-			slices.Sort(tt.options.headers)
+			headers := tt.options.aggregateHeaders()
+			slices.Sort(headers)
 			slices.Sort(tt.results)
-			got, want := tt.options.headers, tt.results
+			got, want := headers, tt.results
 			if !cmp.Equal(got, want) {
 				t.Errorf("header aggregation error %s", cmp.Diff(got, want))
 			}
