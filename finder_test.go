@@ -280,20 +280,29 @@ func TestSearchHeaders(t *testing.T) {
 // TestNewFinderFail tests if NewFinder fails as it should
 func TestNewFinderFail(t *testing.T) {
 
-	_, err := NewFinder("/dev/null", []*regexp.Regexp{}, []string{"hi"})
+	_, err := NewFinder("/dev/null", []*regexp.Regexp{}, []string{"hi"}, false)
 	if err == nil {
 		t.Fatal("expected mailbox exists error in NewFinder")
 	}
 
-	outFile, err := os.CreateTemp("", "finder_")
-	if err != nil {
-		t.Fatal(err)
+	tFile := func() string {
+		outFile, err := os.CreateTemp("", "finder_")
+		if err != nil {
+			t.Fatal(err)
+		}
+		name := outFile.Name()
+		_ = os.Remove(name)
+		return name
 	}
-	name := outFile.Name()
-	_ = os.Remove(name)
-	_, err = NewFinder(name, []*regexp.Regexp{}, []string{})
+
+	_, err = NewFinder(tFile(), []*regexp.Regexp{}, []string{}, false)
 	if err == nil {
 		t.Fatal("expected no searchers error in NewFinder")
+	}
+
+	_, err = NewFinder(tFile(), []*regexp.Regexp{}, []string{"hi"}, true)
+	if err == nil {
+		t.Fatal("expected headersonly missing headers error in NewFinder")
 	}
 }
 
@@ -303,6 +312,7 @@ func TestFinder(t *testing.T) {
 		file             string
 		searchers        []*regexp.Regexp
 		matchers         []string
+		headersOnly      bool
 		processed, found int
 	}{
 		{
@@ -431,7 +441,7 @@ func TestFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			f, err := NewFinder(outFileName, tt.searchers, tt.matchers)
+			f, err := NewFinder(outFileName, tt.searchers, tt.matchers, tt.headersOnly)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -458,6 +468,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 		searchers        []*regexp.Regexp
 		matchers         []string
 		keys             []string
+		headersOnly      bool
 		processed, found int
 	}{
 		{
@@ -526,6 +537,18 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			found:     1,
 		},
 		{
+			file:      "testdata/test_enriched.eml",
+			searchers: []*regexp.Regexp{},
+			matchers: []string{
+				"thisexample@gmail.com",     // From
+				"This is a test for golang", // in text/html attachment, not header
+			},
+			keys:        []string{"From"},
+			headersOnly: true,
+			processed:   1,
+			found:       0,
+		},
+		{
 			file: "testdata/test_txt.eml",
 			searchers: []*regexp.Regexp{
 				regexp.MustCompile("This is not a test"),
@@ -558,6 +581,16 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			processed: 1,
 			found:     1,
 		},
+		{
+			// headers only
+			file:        "testdata/test_txt.eml",
+			searchers:   []*regexp.Regexp{regexp.MustCompile(`CAPQX7QTZ`)},
+			matchers:    []string{"CAPQX7QTZ"},
+			keys:        []string{"MessageID"},
+			headersOnly: true,
+			processed:   1,
+			found:       1,
+		},
 	}
 
 	for i, tt := range tests {
@@ -575,7 +608,13 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			f, err := NewFinder(outFileName, tt.searchers, tt.matchers, tt.keys...)
+			f, err := NewFinder(
+				outFileName,
+				tt.searchers,
+				tt.matchers,
+				tt.headersOnly,
+				tt.keys...,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -624,7 +663,7 @@ func TestSummary(t *testing.T) {
 	}
 	keys := []string{"To"}
 
-	f, err := NewFinder(outFileName, searchers, []string{}, keys...)
+	f, err := NewFinder(outFileName, searchers, []string{}, false, keys...)
 	if err != nil {
 		t.Fatal(err)
 	}

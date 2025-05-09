@@ -163,6 +163,7 @@ type Finder struct {
 	matchers          []string
 	headerKeys        []string
 	mboxWriter        *mbox.MboxWriter
+	headersOnly       bool
 	skipParsingErrors bool
 	processed         int
 	found             int
@@ -185,19 +186,25 @@ func (f *Finder) Summary() string {
 }
 
 // NewFinder creates a new Finder.
-func NewFinder(outputMbox string, searchers []*regexp.Regexp, matchers []string, headerKeys ...string) (*Finder, error) {
+func NewFinder(outputMbox string, searchers []*regexp.Regexp, matchers []string, headersOnly bool, headerKeys ...string) (*Finder, error) {
 	if (len(searchers) + len(matchers)) == 0 {
 		return nil, errors.New("no regexps or matchers provided")
 	}
+	if headersOnly && len(headerKeys) == 0 {
+		return nil, errors.New("no headers provided for headersOnly search")
+	}
+
 	mbw, err := mbox.NewMboxWriter(outputMbox)
 	if err != nil {
 		return nil, fmt.Errorf("NewFinder error: %w", err)
 	}
+
 	f := Finder{
-		searchers:  searchers,
-		matchers:   matchers,
-		headerKeys: headerKeys,
-		mboxWriter: mbw,
+		searchers:   searchers,
+		matchers:    matchers,
+		headersOnly: headersOnly,
+		headerKeys:  headerKeys,
+		mboxWriter:  mbw,
 	}
 	return &f, nil
 }
@@ -219,11 +226,19 @@ func (f *Finder) Operate(r io.Reader) error {
 		return err
 	}
 
-	emailParser := letters.NewParser(
-		parser.WithCustomFileFunc(
-			onlyProcessTextAttachments,
-		),
-	)
+	// select appropriate email parser options; buf
+	var emailParser *parser.Parser
+	if f.headersOnly {
+		emailParser = letters.NewParser(
+			parser.WithHeadersOnly(),
+		)
+	} else {
+		emailParser = letters.NewParser(
+			parser.WithCustomFileFunc(
+				onlyProcessTextAttachments,
+			),
+		)
+	}
 	email, err := emailParser.Parse(tee)
 	if err != nil {
 		if !f.skipParsingErrors {
@@ -236,6 +251,14 @@ func (f *Finder) Operate(r io.Reader) error {
 	// search headers
 	mc := f.searchHeaders(email.Headers)
 	ok := mc.found()
+
+	if f.headersOnly {
+		// drain tee
+		_, err = io.ReadAll(tee)
+		if err != nil {
+			return fmt.Errorf("tee draining error %w", err)
+		}
+	}
 
 	// search content
 	if email.Text != "" && !ok {
