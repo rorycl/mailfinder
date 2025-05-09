@@ -26,6 +26,7 @@ func main() {
 		options.Args.OutputMbox,
 		options.regexes,
 		options.Matchers,
+		options.HeadersOnly,
 		options.headers...,
 	)
 	if err != nil {
