@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -18,23 +19,34 @@ type Options struct {
 	Mboxes      []string `short:"b" long:"mbox" description:"path to mboxes"`
 	Regexes     []string `short:"r" long:"regex" description:"golang regular expressions for search"`
 	Matchers    []string `short:"m" long:"matcher" description:"string expressions for search"`
-	From        bool     `short:"f" long:"from" description:"also search email From header"`
-	To          bool     `short:"t" long:"to" description:"also search email To header"`
-	Cc          bool     `short:"c" long:"cc" description:"also search email Cc header"`
-	Subject     bool     `short:"s" long:"subject" description:"also search email Subject header"`
-	MessageID   bool     `short:"i" long:"messageid" description:"also search messageid header"`
+	From        bool     `long:"from" description:"also search email From header"`
+	To          bool     `long:"to" description:"also search email To header"`
+	Cc          bool     `long:"cc" description:"also search email Cc header"`
+	Subject     bool     `long:"subject" description:"also search email Subject header"`
+	MessageID   bool     `long:"messageid" description:"also search messageid header"`
 	Headers     bool     `short:"a" long:"headers" description:"search email From, To, Cc, Subject and MessageID headers"`
 	DontSkip    bool     `short:"k" long:"dontskip" description:"don't skip email parsing errors"`
 	HeadersOnly bool     `short:"o" long:"headersonly" description:"don't search bodies"`
+	DateFrom    string   `long:"datefrom" description:"inclusive date from which to search (2006-01-02 format)"`
+	DateTo      string   `long:"dateto" description:"inclusive date to which to search (2006-01-02 format)"`
 	Workers     int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
 	// internal fields
 	headers           []string         // rationalised headers to search
 	regexes           []*regexp.Regexp // compiled search terms
 	skipParsingErrors bool             // skip email parsing errors
+	dateFrom, dateTo  time.Time        // parsed dates
 	// output
 	Args struct {
 		OutputMbox string `description:"output mbox path (must not already exist)"`
 	} `positional-args:"yes" required:"yes"`
+}
+
+// dateFmt is the accepted date format
+var dateFmt string = "2006-01-02"
+
+// toDate parses a string into a time.Time or errors
+func toDate(s string) (time.Time, error) {
+	return time.Parse(dateFmt, s)
 }
 
 // aggregateHeaders aggregates header options into options.headers
@@ -149,22 +161,27 @@ func ParseOptions() (*Options, error) {
 	if _, err := parser.Parse(); err != nil {
 		return nil, ParserError{err}
 	}
+	// all maildirs and mailboxes
 	if (len(options.Maildirs) + len(options.Mboxes)) == 0 {
 		return nil, errors.New("no maildirs or mboxes found")
 	}
+	// maildirs
 	for _, d := range options.Maildirs {
 		if !checkDirExists(d) {
 			return nil, fmt.Errorf("maildir %s does not exist", d)
 		}
 	}
+	// mboxes
 	for _, m := range options.Mboxes {
 		if !checkFileExists(m) {
 			return nil, fmt.Errorf("mbox %s does not exist", m)
 		}
 	}
+	// all search matchers
 	if len(options.Regexes) == 0 && len(options.Matchers) == 0 {
 		return nil, errors.New("no regular expressions or string matchers provided")
 	}
+	// regex matchers
 	for i, r := range options.Regexes {
 		rr, err := regexp.Compile(r)
 		if err != nil {
@@ -172,18 +189,41 @@ func ParseOptions() (*Options, error) {
 		}
 		options.regexes = append(options.regexes, rr)
 	}
+	// string matchers
 	for _, r := range options.Matchers {
 		if len(r) < 5 {
 			return nil, fmt.Errorf("matcher %s is less than 5 characters in length", r)
 		}
 	}
+	// dates
+	var err error
+	if options.DateFrom != "" {
+		options.dateFrom, err = toDate(options.DateFrom)
+		if err != nil {
+			return nil, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateFrom, err)
+		}
+	}
+	if options.DateTo != "" {
+		options.dateTo, err = toDate(options.DateTo)
+		if err != nil {
+			return nil, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateTo, err)
+		}
+	}
+	if !options.dateFrom.IsZero() && !options.dateTo.IsZero() {
+		if options.dateTo.Before(options.dateFrom) {
+			return nil, fmt.Errorf("to date %s is before from date %s", options.dateTo.Format("2006-01-02"), options.dateFrom.Format("2006-01-02"))
+		}
+	}
+	// goroutine workers
 	if options.Workers < 1 {
 		return nil, errors.New("at least 1 worker is needed to process work")
 	}
 	if got, want := options.Workers, runtime.NumCPU()*4; got > want {
 		return nil, fmt.Errorf("it is inadvisable to have workers of more than four times system cpus (%d)", runtime.NumCPU())
 	}
+	// skip errors
 	options.skipParsingErrors = !options.DontSkip
+	// output
 	if options.Args.OutputMbox == "" {
 		return nil, errors.New("no output mbox path provided")
 	}

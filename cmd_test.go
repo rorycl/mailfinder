@@ -87,6 +87,26 @@ func TestCmdOptions(t *testing.T) {
 			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "12", "-r", "hi", "-m", "there", "output.mbox"},
 			err:  false,
 		},
+		{
+			desc: "ok matchers, regex and from",
+			args: []string{"progname", "-d", "testdata/maildir/example", "--from", "-w", "12", "-r", "hi", "-m", "there", "output.mbox"},
+			err:  false,
+		},
+		{
+			desc: "ok matchers, regex and datefrom",
+			args: []string{"progname", "-d", "testdata/maildir/example", "--datefrom", "2006-01-02", "-w", "12", "-r", "hi", "-m", "there", "output.mbox"},
+			err:  false,
+		},
+		{
+			desc: "ok matchers, regex and dateto",
+			args: []string{"progname", "-d", "testdata/maildir/example", "--dateto", "2006-01-02", "-w", "12", "-r", "hi", "-m", "there", "output.mbox"},
+			err:  false,
+		},
+		{
+			desc: "fail dateto before datefrom",
+			args: []string{"progname", "-d", "testdata/maildir/example", "--dateto", "2006-01-02", "--datefrom", "2006-01-03", "-m", "there", "output.mbox"},
+			err:  true,
+		},
 	}
 
 	for _, tt := range tests {
