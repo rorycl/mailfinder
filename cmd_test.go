@@ -58,6 +58,16 @@ func TestCmdOptions(t *testing.T) {
 			err:  false,
 		},
 		{
+			desc: "not ok headersonly",
+			args: []string{"progname", "-o", "-d", "testdata/maildir/example", "-r", "hi", "output.mbox"},
+			err:  true,
+		},
+		{
+			desc: "ok headersonly",
+			args: []string{"progname", "-a", "-o", "-d", "testdata/maildir/example", "-r", "hi", "output.mbox"},
+			err:  false,
+		},
+		{
 			desc: "not enough workers",
 			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "0", "-r", "hi", "output.mbox"},
 			err:  true,

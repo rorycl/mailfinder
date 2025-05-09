@@ -14,18 +14,19 @@ const version string = "0.0.10"
 
 // Options are flag options
 type Options struct {
-	Maildirs  []string `short:"d" long:"maildir" description:"path to maildirs"`
-	Mboxes    []string `short:"b" long:"mbox" description:"path to mboxes"`
-	Regexes   []string `short:"r" long:"regexes" description:"golang regular expressions for search"`
-	Matchers  []string `short:"m" long:"matchers" description:"string matchers for search"`
-	Workers   int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
-	From      bool     `short:"f" long:"from" description:"also search email From header"`
-	To        bool     `short:"t" long:"to" description:"also search email To header"`
-	Cc        bool     `short:"c" long:"cc" description:"also search email Cc header"`
-	Subject   bool     `short:"s" long:"subject" description:"also search email Subject header"`
-	MessageID bool     `short:"i" long:"messageid" description:"also search messageid header"`
-	Headers   bool     `short:"a" long:"headers" description:"search email From, To, Cc, Subject and MessageID headers"`
-	DontSkip  bool     `short:"k" long:"dontskip" description:"don't skip email parsing errors"`
+	Maildirs    []string `short:"d" long:"maildir" description:"path to maildirs"`
+	Mboxes      []string `short:"b" long:"mbox" description:"path to mboxes"`
+	Regexes     []string `short:"r" long:"regex" description:"golang regular expressions for search"`
+	Matchers    []string `short:"m" long:"matcher" description:"string expressions for search"`
+	From        bool     `short:"f" long:"from" description:"also search email From header"`
+	To          bool     `short:"t" long:"to" description:"also search email To header"`
+	Cc          bool     `short:"c" long:"cc" description:"also search email Cc header"`
+	Subject     bool     `short:"s" long:"subject" description:"also search email Subject header"`
+	MessageID   bool     `short:"i" long:"messageid" description:"also search messageid header"`
+	Headers     bool     `short:"a" long:"headers" description:"search email From, To, Cc, Subject and MessageID headers"`
+	DontSkip    bool     `short:"k" long:"dontskip" description:"don't skip email parsing errors"`
+	HeadersOnly bool     `short:"o" long:"headersonly" description:"don't search bodies"`
+	Workers     int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
 	// internal fields
 	headers           []string         // rationalised headers to search
 	regexes           []*regexp.Regexp // compiled search terms
@@ -192,6 +193,10 @@ func ParseOptions() (*Options, error) {
 
 	// aggregate the headers
 	options.aggregateHeaders()
+
+	if options.HeadersOnly && len(options.headers) == 0 {
+		return nil, errors.New("to use headersonly a header option must also be selected")
+	}
 
 	return &options, nil
 }
