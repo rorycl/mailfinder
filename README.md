@@ -1,7 +1,7 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.10 : 08 May 2025 : add searching by strings
+version 0.0.11 : 09 May 2025 : addition of headers-only search
 
 Update to use
 [github.com/rorycl/letters](https://github.com/rorycl/letters), which
@@ -21,7 +21,7 @@ mbox files compressed with xz, gzip and bzip2 is supported.
 Usage:
   mailfinder [options] OutputMbox
 
-version 0.0.10
+version 0.0.11
 
 Find email in mbox and maildirs using one or more golang regular
 expressions and/or string matchers. At least one mbox or maildir must be
@@ -55,24 +55,25 @@ or, to search by both regular expression and strings
   mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -m 'Re: Friday' -r "fire.*safety" OutputMbox
 
 Application Options:
-  -d, --maildir=    path to maildirs
-  -b, --mbox=       path to mboxes
-  -r, --regexes=    golang regular expressions for search
-  -m, --matchers=   string matchers for search
-  -w, --workers=    number of worker goroutines (default: 8)
-  -f, --from        also search email From header
-  -t, --to          also search email To header
-  -c, --cc          also search email Cc header
-  -s, --subject     also search email Subject header
-  -i, --messageid   also search messageid header
-  -a, --headers     search email From, To, Cc, Subject and MessageID headers
-  -k, --dontskip    don't skip email parsing errors
+  -d, --maildir=     path to maildirs
+  -b, --mbox=        path to mboxes
+  -r, --regex=       golang regular expressions for search
+  -m, --matcher=     string expressions for search
+  -f, --from         also search email From header
+  -t, --to           also search email To header
+  -c, --cc           also search email Cc header
+  -s, --subject      also search email Subject header
+  -i, --messageid    also search messageid header
+  -a, --headers      search email From, To, Cc, Subject and MessageID headers
+  -k, --dontskip     don't skip email parsing errors
+  -o, --headersonly  don't search bodies
+  -w, --workers=     number of worker goroutines (default: 8)
 
 Help Options:
-  -h, --help        Show this help message
+  -h, --help         Show this help message
 
 Arguments:
-  OutputMbox:       output mbox path (must not already exist)
+  OutputMbox:        output mbox path (must not already exist)
 ```
 
 ## License
