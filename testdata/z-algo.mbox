@@ -1,0 +1,102 @@
+From golang-nuts+bncBCYN5RW53QLRBV6ISOFAMGQE5KEQ7TY@googlegroups.com Fri Sep 17 19:54:19 2021
+Return-path: <golang-nuts+bncBCYN5RW53QLRBV6ISOFAMGQE5KEQ7TY@googlegroups.com>
+Delivery-date: Fri, 17 Sep 2021 18:54:19 +0000
+Received: from mail-ed1-f59.google.com ([209.85.208.59])
+	by example.net with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	(Exim 4.94.2)
+	(envelope-from <golang-nuts+bncBCYN5RW53QLRBV6ISOFAMGQE5KEQ7TY@googlegroups.com>)
+	id 1mRJ06-0008HN-Ri
+	for unknown@example.net; Fri, 17 Sep 2021 18:54:19 +0000
+Received: by mail-ed1-f59.google.com with SMTP id r7-20020aa7c147000000b003d1f18329dcsf9992692edp.13
+        for <unknown@example.net>; Fri, 17 Sep 2021 11:54:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=20210112;
+        h=sender:mime-version:references:in-reply-to:from:date:message-id
+         :subject:to:cc:x-original-sender:x-original-authentication-results
+         :precedence:mailing-list:list-id:list-post:list-help:list-archive
+         :list-subscribe:list-unsubscribe;
+        bh=2au/tF6+M/Ybgy1jKFrmsWK16Cam68CW6lunthy4r/Y=;
+        b=VvHIN2bjYcH/FDtvhRUOWGNKoG5a1NaqBiLRJpS5LflPbV6TeNCmK3F2rwTnd1K1mB
+         pXBphTlpfVNcITdVgDtIU0ZNr1h3NUONAy0AujK2Oby+8cK6OoT81DIByKks3NdXi5nm
+         FSKgVAC5RW3Qz0bXAmC2OcMi72IxS83OsZL9ufgq9Js/8ojtlVkbNlbQBSTvGPE5mER9
+         +ot+wAD2eBEWlLV0jzahyfjD3M6QGrKNViteokftVHfZK+GrAQRlRlDWkZzEApqsP8jK
+         LkflerCfCYq0Dy+s/pdaP8ojun+hUfr+ppzzYhtVEP3es3RoBNraJA02pEWtK8vocMEG
+         8Bqw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=sender:x-gm-message-state:mime-version:references:in-reply-to:from
+         :date:message-id:subject:to:cc:x-original-sender
+         :x-original-authentication-results:precedence:mailing-list:list-id
+         :x-spam-checked-in-group:list-post:list-help:list-archive
+         :list-subscribe:list-unsubscribe;
+        bh=2au/tF6+M/Ybgy1jKFrmsWK16Cam68CW6lunthy4r/Y=;
+        b=xH4bh4sMzJ1qIekO66F7TTDGIbSCOSUGqly4t5SLkt49v7bSwSHVVBvnoYjY6XUake
+         vdrHk7GL5+deZdq3rVUrIt9tSEeKWa6U+bkqoMnnwN0jR9pP9+H+IbjWs518gUSvq819
+         DrRRBq3J2t0yRGc7OgWIWOP67v+Z+tB44fxtbHQzpXLNXU6oC1063xUStoNILmeiFpbQ
+         dNR0YHZurRePk9fGaQ23DzN7m/jYz4APZjfN9czZRSPTqFCx7JZGaqOdCxdypPo5VC9x
+         oP6XK7H2lwl24q7u2wfhaCiSpkxy90pVi7KLu6T0SRD0hWYDZIxuFtYbbWshx7RdjAL6
+         ydTg==
+Sender: golang-nuts@googlegroups.com
+Received: by 2002:a17:906:81d4:: with SMTP id e20ls3882106ejx.2.gmail; Fri, 17
+ Sep 2021 11:54:14 -0700 (PDT)
+X-Received: by 2002:a17:906:e85:: with SMTP id p5mr13657183ejf.159.1631904854759;
+        Fri, 17 Sep 2021 11:54:14 -0700 (PDT)
+Received: from mail-ed1-x530.google.com (mail-ed1-x530.google.com. [2a00:1450:4864:20::530])
+        by gmr-mx.google.com with ESMTPS id 14si590153edv.4.2021.09.17.11.54.14
+        for <golang-nuts@googlegroups.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 17 Sep 2021 11:54:14 -0700 (PDT)
+Received-SPF: pass (google.com: domain of tnai@golang.org designates 2a00:1450:4864:20::530 as permitted sender) client-ip=2a00:1450:4864:20::530;
+Received: by mail-ed1-x530.google.com with SMTP id eg28so10585396edb.1
+        for <golang-nuts@googlegroups.com>; Fri, 17 Sep 2021 11:54:14 -0700 (PDT)
+X-Received: by 2002:a17:906:fcc4:: with SMTP id qx4mr13456578ejb.364.1631904854413;
+ Fri, 17 Sep 2021 11:54:14 -0700 (PDT)
+MIME-Version: 1.0
+References: <b2eadc52-59c4-4be3-a100-1e501a7a3249n@googlegroups.com>
+In-Reply-To: <b2eadc52-59c4-4be3-a100-1e501a7a3249n@googlegroups.com>
+From: Taylor Ian <tnai@golang.org>
+Date: Fri, 17 Sep 2021 11:54:03 -0700
+Message-ID: <CAOyqgcUax0HwxQhsoRy=UdCbt=EoBZcFdKahL6u9P0i=bKp8bA@mail.gmail.com>
+Subject: Re: [go-nuts] Z algorithm in string package
+To: xxxxxxxx <exampleuser@gmail.com>
+Cc: golang-nuts <pretend-golang-nuts@googlegroups.com>
+Content-Type: text/plain; charset="UTF-8"
+X-Original-Sender: tnai@golang.org
+X-Original-Authentication-Results: gmr-mx.google.com;       dkim=pass
+ header.i=@golang-org.20210112.gappssmtp.com header.s=20210112
+ header.b=Iha6ue2D;       spf=pass (google.com: domain of tnai@golang.org
+ designates 2a00:1450:4864:20::530 as permitted sender) smtp.mailfrom=tnai@golang.org;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=golang.org
+Precedence: list
+Mailing-list: list golang-nuts@googlegroups.com; contact golang-nuts+owners@googlegroups.com
+List-ID: <golang-nuts.googlegroups.com>
+X-Spam-Checked-In-Group: golang-nuts@googlegroups.com
+X-Google-Group-Id: 332403668183
+List-Post: <https://groups.google.com/group/golang-nuts/post>, <mailto:golang-nuts@googlegroups.com>
+List-Help: <https://groups.google.com/support/>, <mailto:golang-nuts+help@googlegroups.com>
+List-Archive: <https://groups.google.com/group/golang-nuts
+List-Subscribe: <https://groups.google.com/group/golang-nuts/subscribe>, <mailto:golang-nuts+subscribe@googlegroups.com>
+List-Unsubscribe: <mailto:googlegroups-manage+332403668183+unsubscribe@googlegroups.com>,
+ <https://groups.google.com/group/golang-nuts/subscribe>
+Status: RO
+Content-Length: 1173
+
+On Fri, Sep 17, 2021 at 8:38 AM xxxxxxxx <exampleuser@gmail.com> wrote:
+>
+> Hello everyone, I need help, I often write algorithms on strings, and often I need such a thing as a Z algo, is it possible to add it to a  'std/strings' package ?
+> It can also be used in competitive programming, it is quite a useful thing.
+>
+> More about Z algo - https://www.geeksforgeeks.org/z-algorithm-linear-time-pattern-searching-algorithm/
+
+>From a quick glance this looks like an efficient way of writing
+strings.Contains or strings.Index.  If somebody wants to write a
+faster version of strings.Index, and can prove it using benchmarks, we
+would be happy to include that in the standard library.  strings.Index
+is already pretty heavily optimized, but if we can make it faster we
+will.
+
+-- 
+You received this message because you are subscribed to the Google Groups "golang-nuts" group.
+To unsubscribe from this group and stop receiving emails from it, send an email to golang-nuts+unsubscribe@googlegroups.com.
+To view this discussion on the web visit https://groups.google.com/d/msgid/golang-nuts/CAOyqgcUax0HwxQhsoRy%3DUdCbt%3DEoBZcFdKahL6u9P0i%3DbKp8bA%40mail.gmail.com.
+

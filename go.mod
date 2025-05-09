@@ -3,11 +3,11 @@ module github.com/rorycl/mailfinder
 go 1.24
 
 require (
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/k3a/html2text v1.2.1
-	github.com/rorycl/letters v0.1.2
-	github.com/rorycl/mailboxoperator v0.0.4
+	github.com/rorycl/letters v0.1.3
+	github.com/rorycl/mailboxoperator v0.0.5
 )
 
 require (

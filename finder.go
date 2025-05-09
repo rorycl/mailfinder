@@ -168,6 +168,7 @@ type Finder struct {
 	processed         int
 	found             int
 	foundMutex        sync.Mutex
+	emailParser       *parser.Parser
 }
 
 // addFound records processing numbers
@@ -207,40 +208,39 @@ func NewFinder(po *ProgramOptions) (*Finder, error) {
 		mboxWriter:        mbw,
 		skipParsingErrors: po.skipParsingErrors,
 	}
-	return &f, nil
-}
-
-// Finder searches parts of an email for the given regexp, including (where
-// provided) searching the provided email headers set out in headerKeys.
-func (f *Finder) Operate(r io.Reader) error {
-
-	buf := &bytes.Buffer{}
-	tee := io.TeeReader(r, buf)
-
-	// only consider attachments with a "text" content disposition
-	onlyProcessTextAttachments := func(fe *email.File) error {
-		if !strings.HasPrefix(fe.ContentInfo.Type, "text/") {
-			return nil
-		}
-		var err error
-		fe.Data, err = io.ReadAll(fe.Reader)
-		return err
-	}
-
-	// select appropriate email parser options; buf
-	var emailParser *parser.Parser
 	if f.headersOnly {
-		emailParser = letters.NewParser(
+		f.emailParser = letters.NewParser(
 			parser.WithHeadersOnly(),
 		)
 	} else {
-		emailParser = letters.NewParser(
+		// only consider attachments with a "text" content disposition
+		onlyProcessTextAttachments := func(fe *email.File) error {
+			if !strings.HasPrefix(fe.ContentInfo.Type, "text/") {
+				return nil
+			}
+			var err error
+			fe.Data, err = io.ReadAll(fe.Reader)
+			return err
+		}
+		f.emailParser = letters.NewParser(
 			parser.WithCustomFileFunc(
 				onlyProcessTextAttachments,
 			),
 		)
 	}
-	email, err := emailParser.Parse(tee)
+	return &f, nil
+}
+
+// Finder searches parts of an email for the given regexp, including (where
+// provided) searching the provided email headers set out in headerKeys.
+// Operate fulfills the "Operator" interface required by
+// mailboxoperator.
+func (f *Finder) Operate(r io.Reader) error {
+
+	buf := &bytes.Buffer{}
+	tee := io.TeeReader(r, buf)
+
+	email, err := f.emailParser.Parse(tee)
 	if err != nil {
 		if !f.skipParsingErrors {
 			return err

@@ -252,6 +252,17 @@ func TestSearchHeaders(t *testing.T) {
 			keys: []string{"To", "From", "Subject"},
 			num:  2,
 		},
+		{
+			desc:      "cc replyto sender match",
+			emailFile: "testdata/z-algo.mbox",
+			searchers: []*regexp.Regexp{},
+			matchers: []string{
+				"golang-nuts@googlegroups.com",
+				"pretend-golang-nuts@googlegroups.com",
+			},
+			keys: []string{"ReplyTo", "Cc", "Sender"},
+			num:  2,
+		},
 	}
 	for _, tt := range tests {
 		file, err := os.Open(tt.emailFile)
