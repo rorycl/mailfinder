@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/mail"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -30,7 +31,7 @@ type matchCounter struct {
 
 // newMatchCounter returns a new *matchCounter or error if the needed
 // number of matches is less than 1. "need" should equal the combined
-// length of finder.matchers and finder.searchers.
+// length of finder.matchers and finder.regexes.
 func newMatchCounter(need int) (*matchCounter, error) {
 	if need < 1 {
 		return nil, fmt.Errorf("matchCounter initialised with need %d", need)
@@ -41,13 +42,13 @@ func newMatchCounter(need int) (*matchCounter, error) {
 	}, nil
 }
 
-// found reports if this email has met all matchers and searchers
+// found reports if this email has met all matchers and regexes
 func (m *matchCounter) found() bool {
 	return m.got == m.need
 }
 
 // search searches the provided content with the finder.matchers string
-// expressions and finder.searchers regular expressions. If each
+// expressions and finder.regexes regular expressions. If each
 // match/search criteria is met, return true, else false.
 //
 // Consider in future not using regular expressions whose String()
@@ -78,7 +79,7 @@ func (m *matchCounter) search(content string, f *Finder) bool {
 	// Note that regular expressions are recorded in the matchMap with
 	// an "r#" prefix to try avoid inadvertent overlaps with string
 	// matcher keys.
-	for _, r := range f.searchers {
+	for _, r := range f.regexes {
 		if _, ok := m.matchMap["r#"+r.String()]; ok {
 			continue
 		}
@@ -109,16 +110,16 @@ func (f *Finder) searchHTML(content string, mc *matchCounter) bool {
 	return f.searchText(plainText, mc)
 }
 
-// searchHeaders counts matches against searchers amongst the supplied
+// searchHeaders counts matches against regexes amongst the supplied
 // header strings to search
 func (f *Finder) searchHeaders(headers email.Headers) *matchCounter {
 
-	mc, err := newMatchCounter(len(f.searchers) + len(f.matchers))
+	mc, err := newMatchCounter(len(f.regexes) + len(f.matchers))
 	if err != nil {
 		panic(fmt.Sprintf("invalid initialisation of NewMatchCounter %s", err))
 	}
 
-	if len(f.headerKeys) == 0 {
+	if len(f.headers) == 0 {
 		return mc
 	}
 
@@ -137,7 +138,7 @@ func (f *Finder) searchHeaders(headers email.Headers) *matchCounter {
 		mc.search(str, f)
 	}
 
-	for _, k := range f.headerKeys {
+	for _, k := range f.headers {
 		switch k {
 		case "Sender":
 			findFromAddresses(headers.Sender)
@@ -160,13 +161,17 @@ func (f *Finder) searchHeaders(headers email.Headers) *matchCounter {
 
 // Finder is a struct with settings for performing mail finding
 type Finder struct {
-	searchers         []*regexp.Regexp
+	maildirs          []string
+	mboxes            []string
+	regexes           []*regexp.Regexp
 	matchers          []string
-	headerKeys        []string
+	headers           []string
+	outputMbox        string
 	mboxWriter        *mbox.MboxWriter
 	headersOnly       bool
 	skipParsingErrors bool
 	dateFrom, dateTo  time.Time
+	workers           int
 	processed         int
 	found             int
 	foundMutex        sync.Mutex
@@ -199,30 +204,22 @@ func (f *Finder) inDate(d time.Time) bool {
 	return true
 }
 
-// NewFinder creates a new Finder.
-func NewFinder(po *ProgramOptions) (*Finder, error) {
-	if (len(po.regexes) + len(po.matchers)) == 0 {
-		return nil, errors.New("no regexps or matchers provided")
+// initialize checks the fields of a finder, sets the appropriate parser
+// and opens the output mboxWriter for writing.
+func (f *Finder) initialize() error {
+	if (len(f.regexes) + len(f.matchers)) == 0 {
+		return errors.New("no regexps or matchers provided")
 	}
-	if po.headersOnly && len(po.headers) == 0 {
-		return nil, errors.New("no headers provided for headersOnly search")
+	if f.headersOnly && len(f.headers) == 0 {
+		return errors.New("no headers provided for headersOnly search")
 	}
 
-	mbw, err := mbox.NewMboxWriter(po.outputMbox)
+	var err error
+	f.mboxWriter, err = mbox.NewMboxWriter(f.outputMbox)
 	if err != nil {
-		return nil, fmt.Errorf("NewFinder error: %w", err)
+		return fmt.Errorf("NewFinder error: %w", err)
 	}
 
-	f := Finder{
-		searchers:         po.regexes,
-		matchers:          po.matchers,
-		headersOnly:       po.headersOnly,
-		headerKeys:        po.headers,
-		mboxWriter:        mbw,
-		skipParsingErrors: po.skipParsingErrors,
-		dateFrom:          po.dateFrom,
-		dateTo:            po.dateTo,
-	}
 	if f.headersOnly {
 		f.emailParser = letters.NewParser(
 			parser.WithHeadersOnly(),
@@ -243,13 +240,27 @@ func NewFinder(po *ProgramOptions) (*Finder, error) {
 			),
 		)
 	}
-	return &f, nil
+	return nil
+}
+
+// cleanupAndDelete closes an f.mboxWriter, used mainly for testing
+func (f *Finder) cleanupAndDelete() error {
+	if f == nil {
+		return nil
+	}
+	if f.mboxWriter != nil {
+		_ = f.mboxWriter.Close()
+	}
+	if f.outputMbox != "" {
+		_ = os.Remove(f.outputMbox)
+	}
+	return nil
 }
 
 // Finder searches parts of an email for the given regexp, including (where
-// provided) searching the provided email headers set out in headerKeys.
+// provided) searching the provided email headers set out in headers.
 // Operate fulfills the "Operator" interface required by
-// mailboxoperator.
+// mailboxoperator. Operate may run over many io.Readers.
 func (f *Finder) Operate(r io.Reader) error {
 
 	buf := &bytes.Buffer{}
