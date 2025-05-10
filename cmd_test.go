@@ -112,11 +112,11 @@ func TestCmdOptions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
 			os.Args = tt.args
-			_, err := ParseOptions()
+			finder, err := ParseOptions()
 			if got, want := (err != nil), tt.err; got != want {
-				t.Errorf("want err %t for %s", tt.err, tt.desc)
+				t.Fatalf("want err %t for %s (%s)", tt.err, tt.desc, err)
 			}
-			fmt.Println(err)
+			_ = finder.cleanupAndDelete()
 		})
 	}
 }
@@ -288,14 +288,14 @@ func TestOptionsSkip(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("test_%s", tt.desc), func(t *testing.T) {
 			os.Args = tt.args
-			options, err := ParseOptions()
+			finder, err := ParseOptions()
 			if got, want := (err != nil), tt.err; got != want {
-				t.Errorf("want err %t for %s", tt.err, tt.desc)
+				t.Fatalf("want err %t for %s (%s)", tt.err, tt.desc, err)
 			}
-			fmt.Println(err)
-			if got, want := options.skipParsingErrors, tt.skip; got != want {
+			if got, want := finder.skipParsingErrors, tt.skip; got != want {
 				t.Errorf("skipParsingErrors got %t want %t", got, want)
 			}
+			_ = finder.cleanupAndDelete()
 		})
 	}
 }

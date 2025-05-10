@@ -36,21 +36,6 @@ type CmdOptions struct {
 	} `positional-args:"yes" required:"yes"`
 }
 
-// ProgramOptions are the rationalised CmdOptions required for running the
-// program.
-type ProgramOptions struct {
-	maildirs          []string         // maildirs to search
-	mboxes            []string         // mboxes to search
-	regexes           []*regexp.Regexp // compiled search terms
-	matchers          []string         // string expressions to search
-	headers           []string         // rationalised headers to search
-	headersOnly       bool
-	skipParsingErrors bool      // skip email parsing errors
-	dateFrom, dateTo  time.Time // parsed dates
-	workers           int       // number of worker goroutines
-	outputMbox        string    // output mailbox
-}
-
 // dateFmt is the accepted date format
 var dateFmt string = "2006-01-02"
 
@@ -162,105 +147,110 @@ func (p ParserError) Error() string {
 }
 
 // ParseOptions parses the command line options and returns a pointer to
-// a ProgramOptions struct.
-func ParseOptions() (*ProgramOptions, error) {
+// a Finder struct.
+func ParseOptions() (*Finder, error) {
+
+	f := &Finder{}
 
 	var options CmdOptions
 	var parser = flags.NewParser(&options, flags.Default)
 	parser.Usage = fmt.Sprintf(cmdTpl, version)
 
 	if _, err := parser.Parse(); err != nil {
-		return nil, ParserError{err}
+		return f, ParserError{err}
 	}
-
-	po := ProgramOptions{}
 
 	// all maildirs and mailboxes
 	if (len(options.Maildirs) + len(options.Mboxes)) == 0 {
-		return nil, errors.New("no maildirs or mboxes found")
+		return f, errors.New("no maildirs or mboxes found")
 	}
 	// maildirs
 	for _, d := range options.Maildirs {
 		if !checkDirExists(d) {
-			return nil, fmt.Errorf("maildir %s does not exist", d)
+			return f, fmt.Errorf("maildir %s does not exist", d)
 		}
 	}
 	// mboxes
 	for _, m := range options.Mboxes {
 		if !checkFileExists(m) {
-			return nil, fmt.Errorf("mbox %s does not exist", m)
+			return f, fmt.Errorf("mbox %s does not exist", m)
 		}
 	}
-	po.maildirs = options.Maildirs
-	po.mboxes = options.Mboxes
+	f.maildirs = options.Maildirs
+	f.mboxes = options.Mboxes
 
 	// all search matchers
 	if len(options.Regexes) == 0 && len(options.Matchers) == 0 {
-		return nil, errors.New("no regular expressions or string matchers provided")
+		return f, errors.New("no regular expressions or string matchers provided")
 	}
 	// regex matchers
 	for i, r := range options.Regexes {
 		rr, err := regexp.Compile(r)
 		if err != nil {
-			return nil, fmt.Errorf("regular expression %d did not compile: %s", i, err)
+			return f, fmt.Errorf("regular expression %d did not compile: %s", i, err)
 		}
-		po.regexes = append(po.regexes, rr)
+		f.regexes = append(f.regexes, rr)
 	}
 	// string matchers
 	for _, r := range options.Matchers {
 		if len(r) < 5 {
-			return nil, fmt.Errorf("matcher %s is less than 5 characters in length", r)
+			return f, fmt.Errorf("matcher %s is less than 5 characters in length", r)
 		}
 	}
-	po.matchers = options.Matchers
+	f.matchers = options.Matchers
 
 	// dates
 	var err error
 	if options.DateFrom != "" {
-		po.dateFrom, err = toDate(options.DateFrom)
+		f.dateFrom, err = toDate(options.DateFrom)
 		if err != nil {
-			return nil, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateFrom, err)
+			return f, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateFrom, err)
 		}
 	}
 	if options.DateTo != "" {
-		po.dateTo, err = toDate(options.DateTo)
+		f.dateTo, err = toDate(options.DateTo)
 		if err != nil {
-			return nil, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateTo, err)
+			return f, fmt.Errorf("date %s is not in 2006-01-02 format: %w", options.DateTo, err)
 		}
 	}
-	if !po.dateFrom.IsZero() && !po.dateTo.IsZero() {
-		if po.dateTo.Before(po.dateFrom) {
-			return nil, fmt.Errorf("to date %s is before from date %s", po.dateTo.Format("2006-01-02"), po.dateFrom.Format("2006-01-02"))
+	if !f.dateFrom.IsZero() && !f.dateTo.IsZero() {
+		if f.dateTo.Before(f.dateFrom) {
+			return f, fmt.Errorf("to date %s is before from date %s", f.dateTo.Format("2006-01-02"), f.dateFrom.Format("2006-01-02"))
 		}
 	}
 	// goroutine workers
 	if options.Workers < 1 {
-		return nil, errors.New("at least 1 worker is needed to process work")
+		return f, errors.New("at least 1 worker is needed to process work")
 	}
 	if got, want := options.Workers, runtime.NumCPU()*4; got > want {
-		return nil, fmt.Errorf("it is inadvisable to have workers of more than four times system cpus (%d)", runtime.NumCPU())
+		return f, fmt.Errorf("it is inadvisable to have workers of more than four times system cpus (%d)", runtime.NumCPU())
 	}
-	po.workers = options.Workers
+	f.workers = options.Workers
 
 	// skip errors
-	po.skipParsingErrors = !options.DontSkip
+	f.skipParsingErrors = !options.DontSkip
 
 	// output
 	if options.Args.OutputMbox == "" {
-		return nil, errors.New("no output mbox path provided")
+		return f, errors.New("no output mbox path provided")
 	}
 	if checkFileExists(options.Args.OutputMbox) {
-		return nil, fmt.Errorf("output mbox %s already exists", options.Args.OutputMbox)
+		return f, fmt.Errorf("output mbox %s already exists", options.Args.OutputMbox)
 	}
-	po.outputMbox = options.Args.OutputMbox
+	f.outputMbox = options.Args.OutputMbox
 
 	// aggregate the headers
-	po.headers = options.aggregateHeaders()
-	po.headersOnly = options.HeadersOnly
+	f.headers = options.aggregateHeaders()
+	f.headersOnly = options.HeadersOnly
 
-	if po.headersOnly && len(po.headers) == 0 {
-		return nil, errors.New("to use headersonly a header option must also be selected")
+	if f.headersOnly && len(f.headers) == 0 {
+		return f, errors.New("to use headersonly a header option must also be selected")
 	}
 
-	return &po, nil
+	err = f.initialize()
+	if err != nil {
+		return f, fmt.Errorf("finder initalization error: %w", err)
+	}
+
+	return f, nil
 }
