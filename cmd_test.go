@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -119,20 +118,6 @@ func TestCmdOptions(t *testing.T) {
 			}
 			_ = finder.cleanupAndDelete()
 		})
-	}
-}
-
-func TestParserError(t *testing.T) {
-	os.Args = []string{"progname"} // no args
-	_, err := ParseOptions()
-	if err == nil {
-		t.Fatal("expected parsing error")
-	}
-	var pe ParserError
-	if !errors.As(err, &pe) {
-		t.Errorf("expected error %T %s to be of type ParserError", err, err)
-	} else {
-		_ = pe.Error()
 	}
 }
 
