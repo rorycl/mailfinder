@@ -3,18 +3,19 @@ Search emails in mbox or maildir directories.
 
 version 0.0.13 : 11 May 2025 : simplify invocation of finder
 
-`mailfinder` searches for emails in mbox or maildir format by (golang)
-regular expressions or verbatim strings, saving matched emails to an
-mbox. Each provided mbox or maildir mailbox is searched concurrently.
-Email parsing errors are optionally skipped.
+Update to use
+[github.com/rorycl/letters](https://github.com/rorycl/letters), which
+offers speed improvements, and to search text* content-type inline and
+attached files.
 
-`mailfinder` uses
-[mailboxoperator](https://github.com/rorycl/mailboxoperator) for
-concurrent parsing of mailboxes. Due to mailboxoperator, mbox files may
-be xz, gzip and bzip2 compressed.
+A programme to search for emails in mbox or maildir format by (golang)
+regular expressions, saving matched emails to an mbox. Each provided
+mbox or maildir mailbox is searched concurrently. Email parsing errors
+are optionally skipped.
 
-Email parsing is provided by
-[github.com/rorycl/letters](https://github.com/rorycl/letters).
+This uses [mailboxoperator](https://github.com/rorycl/mailboxoperator)
+for concurrent parsing of mailboxes. Due to mailboxoperator, searching
+mbox files compressed with xz, gzip and bzip2 is supported.
 
 ```
 Usage:
