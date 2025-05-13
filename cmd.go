@@ -11,7 +11,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const version string = "0.0.13"
+const version string = "0.0.12"
 
 // CmdOptions are flag options
 type CmdOptions struct {

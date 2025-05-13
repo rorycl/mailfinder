@@ -1,7 +1,7 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.13 : 11 May 2025 : simplify invocation of finder
+version 0.0.12 : 10 May 2025 : search by date
 
 Update to use
 [github.com/rorycl/letters](https://github.com/rorycl/letters), which
@@ -21,7 +21,7 @@ mbox files compressed with xz, gzip and bzip2 is supported.
 Usage:
   mailfinder [options] OutputMbox
 
-version 0.0.13
+version 0.0.12
 
 Find email in mbox and maildirs using one or more golang regular
 expressions and/or string matchers. At least one mbox or maildir must be
