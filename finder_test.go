@@ -649,12 +649,26 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			found:     1,
 		},
 		{
+			// 6
 			file: "testdata/test_enriched.eml",
 			po: &ProgramOptions{
 				regexes: []*regexp.Regexp{},
 				matchers: []string{
-					"thisexample@gmail.com",     // From
-					"This is a test for golang", // in text/html attachment, not header
+					"thisexample@gmail.com", // From
+				},
+				headers:     []string{"From"},
+				headersOnly: true,
+			},
+			processed: 1,
+			found:     1,
+		},
+		{
+			// 7
+			file: "testdata/test_enriched.eml",
+			po: &ProgramOptions{
+				regexes: []*regexp.Regexp{},
+				matchers: []string{
+					"Thisexample@gmail.com", // From
 				},
 				headers:     []string{"From"},
 				headersOnly: true,
