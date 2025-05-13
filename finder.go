@@ -275,7 +275,6 @@ func (f *Finder) Operate(r io.Reader) error {
 	ok := mc.found()
 	if f.headersOnly {
 		if !ok { // return early
-			f.addFound(false)
 			return nil
 		}
 		// drain tee to allow buf to be written to output

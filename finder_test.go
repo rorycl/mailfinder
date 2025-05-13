@@ -649,7 +649,6 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			found:     1,
 		},
 		{
-			// 6
 			file: "testdata/test_enriched.eml",
 			po: &ProgramOptions{
 				regexes: []*regexp.Regexp{},
