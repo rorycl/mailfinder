@@ -183,7 +183,7 @@ func (f *Finder) addFound(b bool) {
 	}
 }
 
-// Summary prints a summary of the found emails
+// Summary prints a summary of the count of processed and found emails.
 func (f *Finder) Summary() string {
 	return fmt.Sprintf("processed %d found %d emails", f.processed, f.found)
 }
@@ -199,7 +199,13 @@ func (f *Finder) inDate(d time.Time) bool {
 	return true
 }
 
-// NewFinder creates a new Finder.
+// NewFinder creates a new Finder using options described in
+// ProgramOptions. NewFinder allows a finder to be initialised with many
+// options and validation to occur in a single operation.
+//
+// Note that a Finder should be shared amoungst different calls to
+// Operate rather than being reinitialised where Finder options are the
+// same.
 func NewFinder(po *ProgramOptions) (*Finder, error) {
 	if (len(po.regexes) + len(po.matchers)) == 0 {
 		return nil, errors.New("no regexps or matchers provided")

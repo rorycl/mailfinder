@@ -13,7 +13,8 @@ import (
 
 const version string = "0.0.14"
 
-// CmdOptions are flag options
+// CmdOptions are flag options which consume os.Args input. CmdOptions
+// are fed to ProgramOptions during parsing of the flags..
 type CmdOptions struct {
 	Maildirs    []string `short:"d" long:"maildir" description:"path to maildirs"`
 	Mboxes      []string `short:"b" long:"mbox" description:"path to mboxes"`
@@ -37,7 +38,7 @@ type CmdOptions struct {
 }
 
 // ProgramOptions are the rationalised CmdOptions required for running the
-// program.
+// program and are passed to NewFinder.
 type ProgramOptions struct {
 	maildirs          []string         // maildirs to search
 	mboxes            []string         // mboxes to search
@@ -98,12 +99,11 @@ var cmdTpl string = `[options] OutputMbox
 version %s
 
 Find email in mbox and maildirs using one or more golang regular
-expressions and/or string matchers. At least one mbox or maildir must be
-specified. Searches can optionally be extended to some header fields
-specified individually or by using the Headers option.
+expressions and/or string matchers. At least one mbox or maildir mailbox
+must be specified. Searches can optionally be extended to some header
+fields specified individually or by using the Headers option.
 
 All regular expressions and string matchers provided must match.
-
 (See https://yourbasic.org/golang/regexp-cheat-sheet/ for a primer on
 golang's flavour of regular expressions.)
 
