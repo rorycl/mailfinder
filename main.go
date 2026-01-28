@@ -29,8 +29,11 @@ func main() {
 		return
 	}
 
+	// todo:
+	// allow user to deal with error handlers
+
 	// initialise mailbox operator
-	mo, err := mbo.NewMailboxOperator(opts.mboxes, opts.maildirs, finder)
+	mo, err := mbo.NewMailboxOperator(opts.mboxes, opts.maildirs, finder, mbo.OpErrPrintHandler)
 	if err != nil {
 		fmt.Println(err)
 		exit(1)

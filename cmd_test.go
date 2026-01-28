@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"slices"
 	"testing"
 
@@ -80,7 +81,7 @@ func TestCmdOptions(t *testing.T) {
 		},
 		{
 			desc: "too many workers",
-			args: []string{"progname", "-d", "testdata/maildir/example", "-w", "17", "-r", "hi", "output.mbox"},
+			args: []string{"progname", "-d", "testdata/maildir/example", "-w", fmt.Sprintf("%d", runtime.NumCPU()*4+1), "-r", "hi", "output.mbox"},
 			err:  true,
 		},
 		{
