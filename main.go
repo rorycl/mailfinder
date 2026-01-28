@@ -21,6 +21,14 @@ func main() {
 		return
 	}
 
+	// error handling
+	var errorHandler mbo.OperatorErrorHandler
+	if opts.skipParsingErrors {
+		errorHandler = mbo.OpErrPrintHandler
+	} else {
+		errorHandler = mbo.OpErrFatalHandler
+	}
+
 	// initialise finder
 	finder, err := NewFinder(opts)
 	if err != nil {
@@ -29,11 +37,8 @@ func main() {
 		return
 	}
 
-	// todo:
-	// allow user to deal with error handlers
-
 	// initialise mailbox operator
-	mo, err := mbo.NewMailboxOperator(opts.mboxes, opts.maildirs, finder, mbo.OpErrPrintHandler)
+	mo, err := mbo.NewMailboxOperator(opts.mboxes, opts.maildirs, finder, errorHandler)
 	if err != nil {
 		fmt.Println(err)
 		exit(1)
