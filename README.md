@@ -1,13 +1,12 @@
 # mailfinder
 Search emails in mbox or maildir directories.
 
-version 0.0.15 : 28 January 2026 : mailboxoperator API change 
-
+version 0.0.16 : 13 June 2026 : output to text or console
 
 A programme to search for emails in mbox or maildir format by (golang)
-regular expressions, saving matched emails to an mbox. Each provided
-mbox or maildir mailbox is searched concurrently. Email parsing errors
-are optionally skipped.
+regular expressions, saving matched emails to an mbox, text or console
+summary. Each provided mbox or maildir mailbox is searched concurrently.
+Email parsing errors are optionally skipped.
 
 This program uses:
 
@@ -22,9 +21,9 @@ This program uses:
 
 ```
 Usage:
-  mailfinder [options] OutputMbox
+  mailfinder [options] OutputFile
 
-version 0.0.15
+version 0.0.16
 
 Find email in mbox and maildirs using one or more golang regular
 expressions and/or string matchers. At least one mbox or maildir mailbox
@@ -48,13 +47,21 @@ set by the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
+Emails are written to an mbox by default, text summary (useful for
+providing to AI agents) or simple one-line console summary.
+
 e.g. 
 
-  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" OutputMbox
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" output.mbox
 
-or, to search by both regular expression and strings
+or, to search and output a console summary:
 
-  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -m 'Re: Friday' -r "fire.*safety" OutputMbox
+  mailfinder --headers -b mbox3 -r "fire.*safety" -t "console"
+
+or, to search by both regular expression and strings and output a text file summary:
+
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 \
+             -m 'Re: Friday' -r "fire.*safety" -t "textfile"  OutputFile...
 
 Application Options:
   -d, --maildir=     path to maildirs
@@ -72,12 +79,14 @@ Application Options:
       --datefrom=    inclusive date from which to search (2006-01-02 format)
       --dateto=      inclusive date to which to search (2006-01-02 format)
   -w, --workers=     number of worker goroutines (default: 8)
+  -t, --outputtype=  output type (default: mbox)
 
 Help Options:
   -h, --help         Show this help message
 
 Arguments:
-  OutputMbox:        output mbox path (must not already exist)
+  OutputFile:        single output file (must not already exist)
+
 ```
 
 ## License
