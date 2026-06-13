@@ -300,10 +300,11 @@ func TestNewFinderFail(t *testing.T) {
 
 	_, err := NewFinder(
 		&ProgramOptions{
-			outputMbox:  "/dev/null",
+			outputFile:  "/dev/null",
 			regexes:     []*regexp.Regexp{},
 			matchers:    []string{"hi"},
 			headersOnly: false,
+			outputType:  "mbox",
 		},
 	)
 	if err == nil {
@@ -322,10 +323,11 @@ func TestNewFinderFail(t *testing.T) {
 
 	_, err = NewFinder(
 		&ProgramOptions{
-			outputMbox:  tFile(),
+			outputFile:  tFile(),
 			regexes:     []*regexp.Regexp{},
 			matchers:    []string{},
 			headersOnly: false,
+			outputType:  "textfile",
 		},
 	)
 	if err == nil {
@@ -334,10 +336,11 @@ func TestNewFinderFail(t *testing.T) {
 
 	_, err = NewFinder(
 		&ProgramOptions{
-			outputMbox:  tFile(),
+			outputFile:  tFile(),
 			regexes:     []*regexp.Regexp{},
 			matchers:    []string{"hi"},
 			headersOnly: true, // needs headers to accompany
+			outputType:  "mbox",
 		},
 	)
 	if err == nil {
@@ -542,7 +545,7 @@ func TestFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			tt.po.outputMbox = outFileName
+			tt.po.outputFile = outFileName
 
 			f, err := NewFinder(tt.po)
 			if err != nil {
@@ -744,7 +747,7 @@ func TestHeaderAndBodyFinder(t *testing.T) {
 			outFileName := outFile.Name()
 			_ = os.Remove(outFileName)
 
-			tt.po.outputMbox = outFileName
+			tt.po.outputFile = outFileName
 
 			f, err := NewFinder(tt.po)
 			if err != nil {
@@ -795,7 +798,7 @@ func TestSummary(t *testing.T) {
 			regexp.MustCompile("(?i)this section"),
 		},
 		headers:     []string{"To"},
-		outputMbox:  outFileName,
+		outputFile:  outFileName,
 		headersOnly: false,
 	}
 

@@ -11,7 +11,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-const version string = "0.0.14"
+const version string = "0.0.16"
 
 // CmdOptions are flag options which consume os.Args input. CmdOptions
 // are fed to ProgramOptions during parsing of the flags..
@@ -31,10 +31,11 @@ type CmdOptions struct {
 	DateFrom    string   `long:"datefrom" description:"inclusive date from which to search (2006-01-02 format)"`
 	DateTo      string   `long:"dateto" description:"inclusive date to which to search (2006-01-02 format)"`
 	Workers     int      `short:"w" long:"workers" description:"number of worker goroutines" default:"8"`
+	OutputType  string   `short:"t" long:"outputtype" description:"output type" default:"mbox"`
 	// output
 	Args struct {
-		OutputMbox string `description:"output mbox path (must not already exist)"`
-	} `positional-args:"yes" required:"yes"`
+		OutputFile []string `description:"single output file (must not already exist)"`
+	} `positional-args:"yes" required:"no"`
 }
 
 // ProgramOptions are the rationalised CmdOptions required for running the
@@ -49,7 +50,8 @@ type ProgramOptions struct {
 	skipParsingErrors bool      // skip email parsing errors
 	dateFrom, dateTo  time.Time // parsed dates
 	workers           int       // number of worker goroutines
-	outputMbox        string    // output mailbox
+	outputType        string    // output type: mbox/textfile/console
+	outputFile        string    // output mailbox or text file
 }
 
 // dateFmt is the accepted date format
@@ -94,7 +96,7 @@ func (o *CmdOptions) aggregateHeaders() []string {
 	return v
 }
 
-var cmdTpl string = `[options] OutputMbox
+var cmdTpl string = `[options] OutputFile
 
 version %s
 
@@ -120,13 +122,21 @@ set by the -w/--workers switch.
 
 Emails are de-duplicated by message id.
 
+Emails are written to an mbox by default, text summary (useful for
+providing to AI agents) or simple one-line console summary.
+
 e.g. 
 
-  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" OutputMbox
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -r "fire.*safety" output.mbox
 
-or, to search by both regular expression and strings
+or, to search and output a console summary:
 
-  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 -m 'Re: Friday' -r "fire.*safety"`
+  mailfinder --headers -b mbox3 -r "fire.*safety" -t "console"
+
+or, to search by both regular expression and strings and output a text file summary:
+
+  mailfinder --headers -d maildir1 -b mbox2.xz -b mbox3 \
+             -m 'Re: Friday' -r "fire.*safety" -t "textfile" `
 
 // checkFileExists checks if a file exists
 func checkFileExists(path string) bool {
@@ -177,7 +187,7 @@ func ParseOptions() (*ProgramOptions, error) {
 
 	// all maildirs and mailboxes
 	if (len(options.Maildirs) + len(options.Mboxes)) == 0 {
-		return nil, errors.New("no maildirs or mboxes found")
+		return nil, ParserError{errors.New("no maildirs or mboxes found")}
 	}
 	// maildirs
 	for _, d := range options.Maildirs {
@@ -233,6 +243,7 @@ func ParseOptions() (*ProgramOptions, error) {
 			return nil, fmt.Errorf("to date %s is before from date %s", po.dateTo.Format("2006-01-02"), po.dateFrom.Format("2006-01-02"))
 		}
 	}
+
 	// goroutine workers
 	if options.Workers < 1 {
 		return nil, errors.New("at least 1 worker is needed to process work")
@@ -242,17 +253,25 @@ func ParseOptions() (*ProgramOptions, error) {
 	}
 	po.workers = options.Workers
 
+	// check output type and outputfile
+	switch options.OutputType {
+	case "mbox", "textfile":
+		po.outputType = options.OutputType
+		if len(options.Args.OutputFile) != 1 {
+			return nil, errors.New("output file not provided for an mbox/textfile output type")
+		}
+		if checkFileExists(options.Args.OutputFile[0]) {
+			return nil, fmt.Errorf("output file %q already exists", options.Args.OutputFile)
+		}
+		po.outputFile = options.Args.OutputFile[0]
+	case "console":
+		po.outputType = options.OutputType
+	default:
+		return nil, errors.New("output type must be one of mbox, textfile or console")
+	}
+
 	// skip errors
 	po.skipParsingErrors = !options.DontSkip
-
-	// output
-	if options.Args.OutputMbox == "" {
-		return nil, errors.New("no output mbox path provided")
-	}
-	if checkFileExists(options.Args.OutputMbox) {
-		return nil, fmt.Errorf("output mbox %s already exists", options.Args.OutputMbox)
-	}
-	po.outputMbox = options.Args.OutputMbox
 
 	// aggregate the headers
 	po.headers = options.aggregateHeaders()

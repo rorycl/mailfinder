@@ -26,8 +26,7 @@ func TestMain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tfName := tf.Name()
-	_ = os.Remove(tfName)
+	_ = os.Remove(tf.Name())
 
 	os.Args = []string{
 		"--headers",
@@ -36,7 +35,8 @@ func TestMain(t *testing.T) {
 		"-b", "testdata/mbox/testdata/gonuts.mbox",
 		"-r", "(?i)golang",
 		"-r", `(go install.*21\.0@latest|CVE-2023-39323)`,
-		tfName,
+		"-t", "mbox",
+		tf.Name(),
 	}
 
 	// run main
@@ -47,13 +47,12 @@ func TestMain(t *testing.T) {
 	os.Stdout = oldStdout
 
 	if got, want := result, 0; got != want {
-		t.Errorf("got %d want %d exit result", got, want)
+		t.Errorf("exit result error\ngot %d want %d", got, want)
 	}
 
 	if got, want := string(output), "processed 9 found 2 emails\n"; got != want {
 		t.Errorf("got\n%swant\n%s", got, want)
 	}
-	_ = os.Remove(tfName)
 
 }
 

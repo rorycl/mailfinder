@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/mail"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -163,6 +164,8 @@ type Finder struct {
 	searchers         []*regexp.Regexp
 	matchers          []string
 	headerKeys        []string
+	outputType        string
+	fileWriter        io.Writer
 	mboxWriter        *mbox.MboxWriter
 	headersOnly       bool
 	skipParsingErrors bool
@@ -214,21 +217,36 @@ func NewFinder(po *ProgramOptions) (*Finder, error) {
 		return nil, errors.New("no headers provided for headersOnly search")
 	}
 
-	mbw, err := mbox.NewMboxWriter(po.outputMbox)
-	if err != nil {
-		return nil, fmt.Errorf("NewFinder error: %w", err)
-	}
-
 	f := Finder{
 		searchers:         po.regexes,
 		matchers:          po.matchers,
 		headersOnly:       po.headersOnly,
 		headerKeys:        po.headers,
-		mboxWriter:        mbw,
 		skipParsingErrors: po.skipParsingErrors,
 		dateFrom:          po.dateFrom,
 		dateTo:            po.dateTo,
 	}
+
+	// Setup file for output if necessary. File exists checks have already been made.
+	f.outputType = po.outputType
+	var err error
+	switch f.outputType {
+	case "mbox":
+		f.mboxWriter, err = mbox.NewMboxWriter(po.outputFile)
+		if err != nil {
+			return nil, fmt.Errorf("NewFinder error: %w", err)
+		}
+	case "textfile":
+		f.fileWriter, err = os.Create(po.outputFile)
+		if err != nil {
+			return nil, fmt.Errorf("could not create file %q error: %w", po.outputFile, err)
+		}
+	case "console":
+	case "default":
+		return nil, errors.New("output type not known")
+	}
+
+	// Setup parsing options.
 	if f.headersOnly {
 		f.emailParser = letters.NewParser(
 			parser.WithHeadersOnly(),
@@ -328,11 +346,105 @@ func (f *Finder) Operate(r io.Reader) error {
 		return nil
 	}
 	f.addFound(true)
-	_, err = f.mboxWriter.Add(
-		email.Headers.From[0].Address,
-		email.Headers.Date,
-		string(email.Headers.MessageID),
-		buf,
-	)
-	return err
+
+	switch f.outputType {
+	case "mbox":
+		_, err = f.mboxWriter.Add(
+			email.Headers.From[0].Address,
+			email.Headers.Date,
+			string(email.Headers.MessageID),
+			buf,
+		)
+		return err
+
+	case "textfile":
+		summary, err := summarizeMessage(email)
+		if err != nil {
+			return fmt.Errorf("email summary error: %w", err)
+		}
+		_, err = f.fileWriter.Write(summary)
+		if err != nil {
+			return fmt.Errorf("email summary writing error: %w", err)
+		}
+
+	case "console":
+		fmt.Printf("%s: %s: %s: %s\n",
+			string(email.Headers.MessageID),
+			email.Headers.Date.Format(time.RFC1123),
+			email.Headers.To[0],
+			email.Headers.Subject,
+		)
+	}
+	return nil
+}
+
+// summarizeMessage crudely summarises a Message for writing to a text file.
+func summarizeMessage(email *email.Email) ([]byte, error) {
+
+	var emailBytes bytes.Buffer
+
+	_, err := emailBytes.WriteString("Date: " + email.Headers.Date.Format(time.RFC1123) + "\n")
+	if err != nil {
+		return nil, fmt.Errorf("email date error: %w", err)
+	}
+	_, err = emailBytes.WriteString("Subject: " + email.Headers.Subject + "\n")
+	if err != nil {
+		return nil, fmt.Errorf("email date error: %w", err)
+	}
+	_, err = emailBytes.WriteString("From: " + email.Headers.From[0].Address + "\n")
+	if err != nil {
+		return nil, fmt.Errorf("email from error: %w", err)
+	}
+	for _, t := range email.Headers.To {
+		_, err = emailBytes.WriteString("To: " + t.Address + "\n")
+		if err != nil {
+			return nil, fmt.Errorf("email to error: %w", err)
+		}
+	}
+	for _, c := range email.Headers.Cc {
+		_, err = emailBytes.WriteString("Cc: " + c.Address + "\n")
+		if err != nil {
+			return nil, fmt.Errorf("email cc error: %w", err)
+		}
+	}
+	_, _ = emailBytes.WriteString("---\n")
+
+	// Grab the first of Text/EnrichedText/HTML content that hopefully contains a
+	// representation of the content.
+	switch {
+	case email.HTML != "":
+		_, err = emailBytes.WriteString(html2text.HTML2Text(email.HTML) + "\n\n")
+		if err != nil {
+			return nil, fmt.Errorf("email.HTML error: %w", err)
+		}
+	case email.EnrichedText != "":
+		_, err = emailBytes.WriteString(html2text.HTML2Text(email.EnrichedText) + "\n\n")
+		if err != nil {
+			return nil, fmt.Errorf("email.EnrichedText error: %w", err)
+		}
+	case email.Text != "":
+		_, err = emailBytes.WriteString(email.Text + "\n\n")
+		if err != nil {
+			return nil, fmt.Errorf("email.Text error: %w", err)
+		}
+	}
+
+	// This function does not attempt to extract text from files.
+	if len(email.Files) > 0 {
+		_, err = emailBytes.WriteString(fmt.Sprintf("\nAttachments (%d):\n", len(email.Files)))
+		if err != nil {
+			return nil, fmt.Errorf("attachment header error: %w", err)
+		}
+	}
+
+	// Summarize attachments by filename.
+	for ii, fi := range email.Files {
+		_, err = emailBytes.WriteString(fmt.Sprintf("[%d] %s (%s/%s)\n", ii, fi.Name, fi.FileType, fi.ContentInfo.Disposition))
+		if err != nil {
+			return nil, fmt.Errorf("attachment error: %w", err)
+		}
+	}
+	_, _ = emailBytes.WriteString("--------------------------------------------\n\n")
+
+	return emailBytes.Bytes(), nil
 }
